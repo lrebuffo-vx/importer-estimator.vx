@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VORTEX-RPA-Estimador v4.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 35px 40px;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            max-width: 1600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transition: left 0.8s;
+        }
+
+        .header:hover::before {
+            left: 100%;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            color: white;
+            margin-bottom: 8px;
+            text-align: center;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header h1 img {
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .header-subtitle {
+            color: rgba(255,255,255,0.75);
+            font-size: 1.1em;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        
+        
+        
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: "▸";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: #777;
+            font-weight: normal;
+            display: block;
+            margin-top: 4px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: none;
+        }
+
+        .slider-value {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .developer-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .developer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .developer-title {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .role-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .role-card.active {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .role-card.inactive {
+            opacity: 0.6;
+            background: #f8f9fa;
+        }
+
+        .role-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .role-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role-icon {
+            font-size: 1.3em;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .role-config {
+            display: none;
+        }
+
+        .role-config.active {
+            display: block;
+        }
+
+        .results {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+
+        .results h3 {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .result-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .result-subtext {
+            font-size: 0.85em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .phase-timeline {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .timeline-title {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .timeline-legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-critical {
+            background: #ff6b6b;
+        }
+
+        .legend-normal {
+            background: #4ecdc4;
+        }
+
+        .legend-overlap {
+            background: #ffd93d;
+        }
+
+        .gantt-container {
+            margin-top: 20px;
+        }
+
+        .gantt-row {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .gantt-row-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .phase-badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .phase-badge.critical {
+            background: rgba(255, 107, 107, 0.3);
+            border: 1px solid rgba(255, 107, 107, 0.6);
+        }
+
+        .gantt-track {
+            position: relative;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: visible;
+        }
+
+        .gantt-bar {
+            position: absolute;
+            height: 40px;
+            top: 5px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .gantt-bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .gantt-bar.critical {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .gantt-bar.normal {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a3a0 100%);
+        }
+
+        .gantt-bar.overlap {
+            background: linear-gradient(135deg, #ffd93d 0%, #f6c23e 100%);
+            color: #333;
+        }
+
+        .gantt-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .gantt-bar-label {
+            font-weight: 600;
+        }
+
+        .gantt-bar-duration {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .gantt-info {
+            margin-top: 8px;
+            font-size: 0.85em;
+            opacity: 0.85;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .gantt-roles {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .role-tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .timeline-axis {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .axis-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+
+        .axis-line {
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 8px 0;
+            position: relative;
+        }
+
+        .axis-marker {
+            position: absolute;
+            width: 1px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            top: -4px;
+        }
+
+        .critical-path-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 107, 107, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            border: 1px solid rgba(255, 107, 107, 0.4);
+        }
+
+        .critical-icon {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .gantt-row {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .gantt-row:nth-child(1) { animation-delay: 0.1s; opacity: 0; }
+        .gantt-row:nth-child(2) { animation-delay: 0.2s; opacity: 0; }
+        .gantt-row:nth-child(3) { animation-delay: 0.3s; opacity: 0; }
+        .gantt-row:nth-child(4) { animation-delay: 0.4s; opacity: 0; }
+
+        .gantt-bar {
+            animation: slideInFromLeft 0.8s ease-out forwards;
+        }
+
+        .gantt-bar:nth-child(1) { animation-delay: 0.2s; }
+
+        .gantt-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                transparent 100%);
+            animation: shimmer 2s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .timeline-axis {
+            animation: fadeIn 0.5s ease-out 0.8s forwards;
+            opacity: 0;
+        }
+
+        .distribution-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        .distribution-table th,
+        .distribution-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .distribution-table th {
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(23, 162, 184, 0.4);
+        }
+
+        .calculation-details {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .calculation-details h4 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .calculation-step {
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .calculation-step:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    .navigation-tabs {
+            display: flex; justify-content: center; gap: 8px;
+            margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .nav-tab {
+            background: rgba(255,255,255,0.1); color: white;
+            padding: 10px 20px; border-radius: 25px; text-decoration: none;
+            font-weight: 500; font-size: 0.9em; transition: all 0.3s ease;
+        }
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(255,255,255,0.3); transform: translateY(-2px);
+        }
+        </style>
+</head>
+<body>
+    <div class="header">
+        <h1><img src="https://vortex-it.com/wp-content/uploads/2022/04/LOGO-VORTEX-PNG@4x-230x35.png" class="header-logo" height="22" width="145" alt="Vortex"> RPA — Estimador de Esfuerzo</h1>
+        <div class="header-subtitle">Herramienta de evaluación de esfuerzo para desarrollo de automatizaciones</div>
+        <span class="version-badge">v4.0 - Modelo Mejorado</span>
+    </div>
+
+    <div class="navigation-tabs">
+        <a href="index.html" class="nav-tab">🏠 Inicio</a>
+        <a href="rpa-overview.html" class="nav-tab">🏢 Overview</a>
+        <a href="rpa-planificacion.html" class="nav-tab">📊 Planificación</a>
+        <a href="rpa-ejecucion.html" class="nav-tab">⏱️ Ejecución</a>
+        <a href="rpa-gantt.html" class="nav-tab">📊 Scrumban</a>
+        <a href="rpa-status.html" class="nav-tab">📋 Status</a>
+        <a href="rpa-informe-mensual.html" class="nav-tab">📈 Informe</a>
+    </div>
+
+    <div class="container">
+        <div class="content">
+            <!-- Información del Proyecto -->
+            <div class="section">
+                <h2 class="section-title">Información del Proyecto</h2>
+                
+                <div class="form-group">
+                    <label>
+                        Nombre del Proyecto
+                        <span class="help-text">Identificador del proyecto RPA</span>
+                    </label>
+                    <input type="text" id="projectName" placeholder="Ej: Automatización Facturación SAP">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>
+                            Horas Estimadas Desarrollo
+                            <span class="help-text">Total de horas estimadas para la fase de Desarrollo</span>
+                        </label>
+                        <input type="number" id="estimatedHours" value="100" min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Tipo de Agenda
+                            <span class="help-text">Modelo de trabajo del equipo</span>
+                        </label>
+                        <select id="agendaType">
+                            <option value="1.1">Agenda bloqueada (dedicación exclusiva)</option>
+                            <option value="1.3" selected>1-3 actividades priorizadas</option>
+                            <option value="1.6">Sin priorización clara</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Factores Multiplicadores -->
+            <div class="section">
+                <h2 class="section-title">Factores Multiplicadores</h2>
+                
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <div>Ajusta los factores según las características del proyecto. Los rangos recomendados se muestran entre paréntesis.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Madurez Cliente RPA
+                        <span class="help-text">1.0 = Cliente maduro con experiencia | 2.0 = Cliente nuevo sin experiencia</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="clientMaturity" min="1.0" max="2.0" step="0.1" value="1.0">
+                        <div class="slider-value" id="clientMaturityValue">1.0x</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Complejidad Técnica
+                        <span class="help-text">1.0 = Proceso simple | 2.0 = Integraciones complejas, OCR, AI</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="technicalComplexity" min="1.0" max="2.0" step="0.1" value="1.0">
+                        <div class="slider-value" id="technicalComplexityValue">1.0x</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Disponibilidad de Ambientes
+                        <span class="help-text">1.0 = Ambiente dedicado 24/7 | 2.0 = Ambientes compartidos con ventanas limitadas</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="environmentAvailability" min="1.0" max="2.0" step="0.1" value="1.0">
+                        <div class="slider-value" id="environmentAvailabilityValue">1.0x</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Cambios de Alcance
+                        <span class="help-text">1.0 = Proceso estable y documentado | 2.0 = Proceso inestable o en rediseño</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="scopeChanges" min="1.0" max="2.0" step="0.1" value="1.0">
+                        <div class="slider-value" id="scopeChangesValue">1.0x</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Dependencias Externas
+                        <span class="help-text">1.0 = Pocas dependencias | 2.0 = Múltiples stakeholders y aprobaciones</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="externalDependencies" min="1.0" max="2.0" step="0.1" value="1.0">
+                        <div class="slider-value" id="externalDependenciesValue">1.0x</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuración del Equipo - Desarrolladores -->
+            <div class="section">
+                <h2 class="section-title">Equipo de Desarrollo</h2>
+                
+                <div class="alert alert-warning">
+                    <span>⚠️</span>
+                    <div>Los desarrolladores son la <strong>ruta crítica</strong> del proyecto. Su capacidad determina la duración principal.</div>
+                </div>
+
+                <div id="developersContainer">
+                    <!-- Developers will be added here -->
+                </div>
+
+                <button class="add-btn" onclick="addDeveloper()">
+                    ➕ Agregar Desarrollador
+                </button>
+            </div>
+
+            <!-- Roles de Soporte -->
+            <div class="section">
+                <h2 class="section-title">Roles de Soporte</h2>
+                
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <div>Estos roles trabajan en paralelo o secuencialmente según la fase del proyecto. El porcentaje es relativo a las horas de desarrollo.</div>
+                </div>
+
+                <!-- Analista de Negocios -->
+                <div class="role-card" id="baCard">
+                    <div class="role-header">
+                        <div class="role-title">
+                            <span class="role-icon">📊</span>
+                            Analista de Negocios (BA)
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="baEnabled" onchange="toggleRole('ba')" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="role-config active" id="baConfig">
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label>
+                                    % respecto a DEV
+                                    <span class="help-text">Recomendado: 25-35%</span>
+                                </label>
+                                <input type="number" id="baPercentage" value="30" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Dedicación</label>
+                                <select id="baDedication">
+                                    <option value="part-time">Part-time (3.5hs efectivas)</option>
+                                    <option value="full-time">Full-time (6.5hs efectivas)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    Trabajo en inicio
+                                    <span class="help-text">% de sus horas al inicio</span>
+                                </label>
+                                <input type="number" id="baStartPercentage" value="60" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Líder Técnico -->
+                <div class="role-card" id="ltCard">
+                    <div class="role-header">
+                        <div class="role-title">
+                            <span class="role-icon">👨‍💻</span>
+                            Líder Técnico (LT)
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="ltEnabled" onchange="toggleRole('lt')" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="role-config active" id="ltConfig">
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label>
+                                    % respecto a DEV
+                                    <span class="help-text">Recomendado: 30-40%</span>
+                                </label>
+                                <input type="number" id="ltPercentage" value="35" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Dedicación</label>
+                                <select id="ltDedication">
+                                    <option value="part-time">Part-time (3.5hs efectivas)</option>
+                                    <option value="full-time">Full-time (6.5hs efectivas)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    Trabajo en desarrollo
+                                    <span class="help-text">% durante fase DEV</span>
+                                </label>
+                                <input type="number" id="ltDevPercentage" value="70" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QA -->
+                <div class="role-card" id="qaCard">
+                    <div class="role-header">
+                        <div class="role-title">
+                            <span class="role-icon">🔍</span>
+                            Quality Assurance (QA)
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="qaEnabled" onchange="toggleRole('qa')">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="role-config" id="qaConfig">
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label>
+                                    % respecto a DEV
+                                    <span class="help-text">Recomendado: 20-30%</span>
+                                </label>
+                                <input type="number" id="qaPercentage" value="25" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Dedicación</label>
+                                <select id="qaDedication">
+                                    <option value="part-time">Part-time (3.5hs efectivas)</option>
+                                    <option value="full-time">Full-time (6.5hs efectivas)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    Trabajo en testing
+                                    <span class="help-text">% en fase de testing</span>
+                                </label>
+                                <input type="number" id="qaTestPercentage" value="80" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Manager -->
+                <div class="role-card" id="pmCard">
+                    <div class="role-header">
+                        <div class="role-title">
+                            <span class="role-icon">📋</span>
+                            Project Manager (PM)
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pmEnabled" onchange="toggleRole('pm')" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="role-config active" id="pmConfig">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>
+                                    % respecto a DEV
+                                    <span class="help-text">Recomendado: 15-25%</span>
+                                </label>
+                                <input type="number" id="pmPercentage" value="20" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Dedicación</label>
+                                <select id="pmDedication">
+                                    <option value="part-time" selected>Part-time (3.5hs efectivas)</option>
+                                    <option value="full-time">Full-time (6.5hs efectivas)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buffers de Contingencia -->
+            <div class="section">
+                <h2 class="section-title">Buffers de Contingencia</h2>
+                
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label>
+                            Buffer Técnico (%)
+                            <span class="help-text">Imprevistos técnicos (recomendado: 15%)</span>
+                        </label>
+                        <input type="number" id="technicalBuffer" value="15" min="0" max="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Buffer Cliente (%)
+                            <span class="help-text">Dependencias externas (recomendado: 20-30%)</span>
+                        </label>
+                        <input type="number" id="clientBuffer" value="25" min="0" max="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Buffer de Integración (%)
+                            <span class="help-text">Testing e2e y UAT (recomendado: 10%)</span>
+                        </label>
+                        <input type="number" id="integrationBuffer" value="10" min="0" max="30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Calcular -->
+            <div style="text-align: center; margin: 30px 0;">
+                <button class="btn btn-primary" onclick="calculate()" style="font-size: 1.2em; padding: 18px 40px;">
+                    🧮 Calcular Estimación
+                </button>
+            </div>
+
+            <!-- Resultados -->
+            <div id="resultsSection" style="display: none;">
+                <div class="results">
+                    <h3>📊 Resultados de la Estimación</h3>
+                    
+                    <div class="grid-2">
+                        <div class="result-card">
+                            <div class="result-label">Horas Ajustadas</div>
+                            <div class="result-value" id="adjustedHours">0</div>
+                            <div class="result-subtext">Con factores multiplicadores aplicados</div>
+                        </div>
+
+                        <div class="result-card">
+                            <div class="result-label">Factor de Desvío Total</div>
+                            <div class="result-value" id="totalFactor">0</div>
+                            <div class="result-subtext">Multiplicador combinado del proyecto</div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">⏱️ Días Laborales Estimados</div>
+                        <div class="result-value" id="calendarDays">0</div>
+                        <div class="result-subtext" id="weeksEstimate"></div>
+                    </div>
+
+                    <!-- Timeline de Fases -->
+                    <div class="result-card">
+                        <div class="result-label" style="font-size: 1.1em; margin-bottom: 15px;">📅 Timeline por Fases</div>
+                        <div class="phase-timeline" id="phaseTimeline">
+                            <!-- Phases will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Distribución por Rol -->
+                    <div class="result-card">
+                        <div class="result-label" style="font-size: 1.1em; margin-bottom: 15px;">👥 Distribución de Horas por Rol</div>
+                        <table class="distribution-table" id="roleDistribution">
+                            <!-- Distribution will be populated here -->
+                        </table>
+                    </div>
+
+                    <!-- Detalles del Cálculo -->
+                    <div class="calculation-details">
+                        <h4>🔍 Detalles del Cálculo</h4>
+                        <div id="calculationSteps"></div>
+                    </div>
+                </div>
+
+                <!-- Botones de Exportación -->
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="exportToJSON()">
+                        💾 Exportar JSON
+                    </button>
+                    <button class="btn btn-info" onclick="exportToPDF()">
+                        📄 Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global data object
+        let estimationData = {};
+        let developerCounter = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupSliders();
+            // Add initial developer
+            addDeveloper('full-time');
+        });
+
+        // Setup slider value displays
+        function setupSliders() {
+            const sliders = [
+                { id: 'clientMaturity', valueId: 'clientMaturityValue' },
+                { id: 'technicalComplexity', valueId: 'technicalComplexityValue' },
+                { id: 'environmentAvailability', valueId: 'environmentAvailabilityValue' },
+                { id: 'scopeChanges', valueId: 'scopeChangesValue' },
+                { id: 'externalDependencies', valueId: 'externalDependenciesValue' }
+            ];
+
+            sliders.forEach(slider => {
+                const element = document.getElementById(slider.id);
+                const valueElement = document.getElementById(slider.valueId);
+                
+                element.addEventListener('input', function() {
+                    valueElement.textContent = parseFloat(this.value).toFixed(2) + 'x';
+                });
+            });
+        }
+
+        // Toggle role
+        function toggleRole(role) {
+            const checkbox = document.getElementById(`${role}Enabled`);
+            const card = document.getElementById(`${role}Card`);
+            const config = document.getElementById(`${role}Config`);
+            
+            if (checkbox.checked) {
+                card.classList.add('active');
+                card.classList.remove('inactive');
+                config.classList.add('active');
+            } else {
+                card.classList.remove('active');
+                card.classList.add('inactive');
+                config.classList.remove('active');
+            }
+        }
+
+        // Add developer
+        function addDeveloper(dedication = 'full-time') {
+            developerCounter++;
+            const container = document.getElementById('developersContainer');
+            
+            const devDiv = document.createElement('div');
+            devDiv.className = 'developer-item';
+            devDiv.id = `dev-${developerCounter}`;
+            
+            devDiv.innerHTML = `
+                <div class="developer-header">
+                    <div class="developer-title">
+                        <span>💻</span>
+                        Desarrollador ${developerCounter}
+                    </div>
+                    <button class="remove-btn" onclick="removeDeveloper(${developerCounter})">✕ Eliminar</button>
+                </div>
+                <div class="form-group">
+                    <label>Dedicación</label>
+                    <select class="dev-dedication">
+                        <option value="part-time" ${dedication === 'part-time' ? 'selected' : ''}>Part-time (4hs/día - 3.5hs efectivas)</option>
+                        <option value="full-time" ${dedication === 'full-time' ? 'selected' : ''}>Full-time (8hs/día - 6.5hs efectivas)</option>
+                    </select>
+                </div>
+            `;
+            
+            container.appendChild(devDiv);
+        }
+
+        // Remove developer
+        function removeDeveloper(id) {
+            const devCount = document.querySelectorAll('.developer-item').length;
+            if (devCount <= 1) {
+                alert('Debe haber al menos un desarrollador en el equipo');
+                return;
+            }
+            
+            const dev = document.getElementById(`dev-${id}`);
+            if (dev) {
+                dev.remove();
+            }
+        }
+
+        // Get developers configuration
+        function getDevelopersConfig() {
+            const developers = [];
+            const devElements = document.querySelectorAll('.developer-item');
+            
+            devElements.forEach((element, index) => {
+                const dedication = element.querySelector('.dev-dedication').value;
+                const effectiveHours = dedication === 'full-time' ? 6.5 : 3.5;
+                
+                developers.push({
+                    id: index + 1,
+                    dedication: dedication,
+                    effectiveHours: effectiveHours
+                });
+            });
+            
+            return developers;
+        }
+
+        // Calculate
+        function calculate() {
+            // Get input values
+            const projectName = document.getElementById('projectName').value || 'Proyecto Sin Nombre';
+            const estimatedHours = parseFloat(document.getElementById('estimatedHours').value);
+            const agendaType = parseFloat(document.getElementById('agendaType').value);
+            
+            // Get factors
+            const clientMaturity = parseFloat(document.getElementById('clientMaturity').value);
+            const technicalComplexity = parseFloat(document.getElementById('technicalComplexity').value);
+            const environmentAvailability = parseFloat(document.getElementById('environmentAvailability').value);
+            const scopeChanges = parseFloat(document.getElementById('scopeChanges').value);
+            const externalDependencies = parseFloat(document.getElementById('externalDependencies').value);
+            
+            // Calculate total factor
+            const totalFactor = clientMaturity * technicalComplexity * environmentAvailability * 
+                              scopeChanges * externalDependencies;
+            
+            // Calculate adjusted hours
+            const adjustedHours = estimatedHours * totalFactor;
+            
+            // Get developers
+            const developers = getDevelopersConfig();
+            const devCapacityPerDay = developers.reduce((sum, dev) => sum + dev.effectiveHours, 0);
+            
+            // Get support roles
+            const roles = {
+                ba: {
+                    enabled: document.getElementById('baEnabled').checked,
+                    percentage: parseFloat(document.getElementById('baPercentage').value),
+                    dedication: document.getElementById('baDedication').value,
+                    startPercentage: parseFloat(document.getElementById('baStartPercentage').value),
+                    effectiveHours: document.getElementById('baDedication').value === 'full-time' ? 6.5 : 3.5
+                },
+                lt: {
+                    enabled: document.getElementById('ltEnabled').checked,
+                    percentage: parseFloat(document.getElementById('ltPercentage').value),
+                    dedication: document.getElementById('ltDedication').value,
+                    devPercentage: parseFloat(document.getElementById('ltDevPercentage').value),
+                    effectiveHours: document.getElementById('ltDedication').value === 'full-time' ? 6.5 : 3.5
+                },
+                qa: {
+                    enabled: document.getElementById('qaEnabled').checked,
+                    percentage: parseFloat(document.getElementById('qaPercentage').value),
+                    dedication: document.getElementById('qaDedication').value,
+                    testPercentage: parseFloat(document.getElementById('qaTestPercentage').value),
+                    effectiveHours: document.getElementById('qaDedication').value === 'full-time' ? 6.5 : 3.5
+                },
+                pm: {
+                    enabled: document.getElementById('pmEnabled').checked,
+                    percentage: parseFloat(document.getElementById('pmPercentage').value),
+                    dedication: document.getElementById('pmDedication').value,
+                    effectiveHours: document.getElementById('pmDedication').value === 'full-time' ? 6.5 : 3.5
+                }
+            };
+            
+            // Calculate total weight: DEV (100%) + active support roles percentages
+            let totalWeight = 100; // DEV base weight
+            if (roles.ba.enabled) totalWeight += roles.ba.percentage;
+            if (roles.lt.enabled) totalWeight += roles.lt.percentage;
+            if (roles.qa.enabled) totalWeight += roles.qa.percentage;
+            if (roles.pm.enabled) totalWeight += roles.pm.percentage;
+            
+            // Calculate development hours dynamically so all roles sum to adjustedHours
+            const devHours = adjustedHours * (100 / totalWeight);
+            
+            // Calculate hours by role (percentages of DEV hours)
+            const roleHours = {
+                dev: devHours,
+                ba: roles.ba.enabled ? (devHours * roles.ba.percentage / 100) : 0,
+                lt: roles.lt.enabled ? (devHours * roles.lt.percentage / 100) : 0,
+                qa: roles.qa.enabled ? (devHours * roles.qa.percentage / 100) : 0,
+                pm: roles.pm.enabled ? (devHours * roles.pm.percentage / 100) : 0
+            };
+            
+            // Store the calculated DEV percentage for display
+            const devPercentage = (100 / totalWeight) * 100;
+            
+            // Calculate phases
+            const phases = calculatePhases(roleHours, roles, devCapacityPerDay, agendaType);
+            
+            // Get buffers
+            const technicalBuffer = parseFloat(document.getElementById('technicalBuffer').value) / 100;
+            const clientBuffer = parseFloat(document.getElementById('clientBuffer').value) / 100;
+            const integrationBuffer = parseFloat(document.getElementById('integrationBuffer').value) / 100;
+            const totalBuffer = 1 + technicalBuffer + clientBuffer + integrationBuffer;
+            
+            // Calculate final days
+            const baseDays = phases.totalDays;
+            const calendarDays = Math.ceil(baseDays * totalBuffer);
+            const weeks = (calendarDays / 5).toFixed(1);
+            
+            // Store data
+            estimationData = {
+                projectName: projectName,
+                timestamp: new Date().toISOString(),
+                inputs: {
+                    estimatedHours: estimatedHours,
+                    agendaType: agendaType,
+                    factors: {
+                        clientMaturity: clientMaturity,
+                        technicalComplexity: technicalComplexity,
+                        environmentAvailability: environmentAvailability,
+                        scopeChanges: scopeChanges,
+                        externalDependencies: externalDependencies,
+                        totalFactor: totalFactor
+                    },
+                    buffers: {
+                        technical: technicalBuffer * 100,
+                        client: clientBuffer * 100,
+                        integration: integrationBuffer * 100,
+                        total: totalBuffer
+                    },
+                    developers: developers,
+                    roles: roles
+                },
+                calculations: {
+                    adjustedHours: adjustedHours,
+                    devCapacityPerDay: devCapacityPerDay,
+                    roleHours: roleHours,
+                    totalWeight: totalWeight,
+                    devPercentage: devPercentage,
+                    phases: phases,
+                    baseDays: baseDays,
+                    calendarDays: calendarDays,
+                    weeks: weeks
+                }
+            };
+            
+            // Display results
+            displayResults();
+        }
+
+        // Calculate phases
+        function calculatePhases(roleHours, roles, devCapacityPerDay, agendaFactor) {
+            const phases = [];
+            let cumulativeDays = 0;
+            
+            // Phase 1: Analysis (if BA enabled)
+            if (roles.ba.enabled && roleHours.ba > 0) {
+                const analysisHours = roleHours.ba * (roles.ba.startPercentage / 100);
+                const analysisDays = (analysisHours / roles.ba.effectiveHours) * agendaFactor;
+                
+                phases.push({
+                    name: 'Análisis y Levantamiento',
+                    hours: analysisHours,
+                    days: analysisDays,
+                    roles: ['BA'],
+                    description: `${analysisHours.toFixed(1)}hs de levantamiento de proceso y documentación`
+                });
+                
+                cumulativeDays += analysisDays * 0.9; // 10% overlap with next phase
+            }
+            
+            // Phase 2: Development (critical path)
+            const devDays = (roleHours.dev / devCapacityPerDay) * agendaFactor;
+            const ltInDevHours = roles.lt.enabled ? (roleHours.lt * (roles.lt.devPercentage / 100)) : 0;
+            
+            const devRoles = ['DEV'];
+            if (roles.lt.enabled && ltInDevHours > 0) devRoles.push('LT');
+            if (roles.pm.enabled) devRoles.push('PM');
+            
+            phases.push({
+                name: 'Desarrollo',
+                hours: roleHours.dev,
+                days: devDays,
+                roles: devRoles,
+                description: `${roleHours.dev.toFixed(1)}hs de desarrollo core (ruta crítica)`
+            });
+            
+            cumulativeDays += devDays;
+            
+            // Phase 3: Testing & QA (if QA enabled)
+            if (roles.qa.enabled && roleHours.qa > 0) {
+                const testingHours = roleHours.qa * (roles.qa.testPercentage / 100);
+                const testingDays = (testingHours / roles.qa.effectiveHours) * agendaFactor;
+                
+                phases.push({
+                    name: 'Testing y QA',
+                    hours: testingHours,
+                    days: testingDays,
+                    roles: ['QA', 'DEV'],
+                    description: `${testingHours.toFixed(1)}hs de testing integral y corrección de defectos`
+                });
+                
+                cumulativeDays += testingDays * 0.8; // 20% overlap with previous phase
+            }
+            
+            // Phase 4: UAT & Closure
+            const closureHours = Math.max(
+                roles.ba.enabled ? roleHours.ba * (1 - roles.ba.startPercentage / 100) : 0,
+                roles.lt.enabled ? roleHours.lt * (1 - roles.lt.devPercentage / 100) : 0
+            );
+            
+            if (closureHours > 0) {
+                const closureCapacity = Math.max(
+                    roles.ba.enabled ? roles.ba.effectiveHours : 0,
+                    roles.lt.enabled ? roles.lt.effectiveHours : 0
+                );
+                const closureDays = (closureHours / closureCapacity) * agendaFactor;
+                
+                const closureRoles = [];
+                if (roles.ba.enabled) closureRoles.push('BA');
+                if (roles.lt.enabled) closureRoles.push('LT');
+                if (roles.pm.enabled) closureRoles.push('PM');
+                
+                phases.push({
+                    name: 'UAT y Cierre',
+                    hours: closureHours,
+                    days: closureDays,
+                    roles: closureRoles,
+                    description: `${closureHours.toFixed(1)}hs de UAT, documentación final y paso a producción`
+                });
+                
+                cumulativeDays += closureDays * 0.7; // 30% overlap
+            }
+            
+            return {
+                phases: phases,
+                totalDays: cumulativeDays
+            };
+        }
+
+        // Display results
+        function displayResults() {
+            const data = estimationData;
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Update result cards
+            document.getElementById('adjustedHours').textContent = data.calculations.adjustedHours.toFixed(1) + ' hs';
+            document.getElementById('totalFactor').textContent = data.inputs.factors.totalFactor.toFixed(2) + 'x';
+            document.getElementById('calendarDays').textContent = data.calculations.calendarDays + ' días laborales';
+            document.getElementById('weeksEstimate').textContent = `Aproximadamente ${data.calculations.weeks} semanas laborales`;
+            
+            // Phase timeline - Gantt style
+            const phaseTimeline = document.getElementById('phaseTimeline');
+            
+            // Calculate timeline scale
+            const totalProjectDays = data.calculations.baseDays;
+            let cumulativeDays = 0;
+            
+            // Generate Gantt visualization
+            let ganttHTML = `
+                <div class="timeline-header">
+                    <div class="timeline-title">Línea de Tiempo del Proyecto</div>
+                    <div class="timeline-legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-critical"></div>
+                            <span>Ruta Crítica</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-normal"></div>
+                            <span>Fase Normal</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-overlap"></div>
+                            <span>Traslape</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="gantt-container">
+            `;
+            
+            data.calculations.phases.phases.forEach((phase, index) => {
+                const isCritical = phase.name === 'Desarrollo';
+                const phaseClass = isCritical ? 'critical' : 'normal';
+                
+                // Calculate position and width
+                const startPercent = (cumulativeDays / totalProjectDays) * 100;
+                const widthPercent = (phase.days / totalProjectDays) * 100;
+                
+                // Determine actual overlap for this phase
+                let overlapFactor = 1.0;
+                if (phase.name === 'Análisis y Levantamiento') overlapFactor = 0.9;
+                else if (phase.name === 'Testing y QA') overlapFactor = 0.8;
+                else if (phase.name === 'UAT y Cierre') overlapFactor = 0.7;
+                
+                ganttHTML += `
+                    <div class="gantt-row">
+                        <div class="gantt-row-header">
+                            <div class="phase-badge ${isCritical ? 'critical' : ''}">
+                                ${index + 1}. ${phase.name}
+                                ${isCritical ? '<span class="critical-path-indicator"><span class="critical-icon">⚡</span> Ruta Crítica</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="gantt-track">
+                            <div class="gantt-bar ${phaseClass}" 
+                                 style="left: ${startPercent}%; width: ${widthPercent}%;"
+                                 title="${phase.description}">
+                                <div class="gantt-bar-content">
+                                    <span class="gantt-bar-label">${phase.hours.toFixed(1)} hs</span>
+                                    <span class="gantt-bar-duration">${phase.days.toFixed(1)} días</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gantt-info">
+                            <div class="gantt-roles">
+                                ${phase.roles.map(role => `<span class="role-tag">${role}</span>`).join('')}
+                            </div>
+                            <span>• ${phase.description}</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Update cumulative with overlap
+                cumulativeDays += phase.days * overlapFactor;
+            });
+            
+            // Add timeline axis
+            const axisMarkers = [0, 25, 50, 75, 100];
+            ganttHTML += `
+                </div>
+                <div class="timeline-axis">
+                    <div class="axis-line">
+                        ${axisMarkers.map(percent => 
+                            `<div class="axis-marker" style="left: ${percent}%"></div>`
+                        ).join('')}
+                    </div>
+                    <div class="axis-labels">
+                        <span>Día 0</span>
+                        <span>Día ${(totalProjectDays * 0.25).toFixed(0)}</span>
+                        <span>Día ${(totalProjectDays * 0.5).toFixed(0)}</span>
+                        <span>Día ${(totalProjectDays * 0.75).toFixed(0)}</span>
+                        <span>Día ${totalProjectDays.toFixed(0)}</span>
+                    </div>
+                </div>
+            `;
+            
+            phaseTimeline.innerHTML = ganttHTML;
+            
+            // Role distribution table
+            const table = document.getElementById('roleDistribution');
+            const roleRows = [];
+            
+            // Calculate actual percentages of total
+            const totalHours = data.calculations.adjustedHours;
+            
+            if (data.calculations.roleHours.ba > 0) {
+                const baPercent = (data.calculations.roleHours.ba / totalHours * 100).toFixed(1);
+                roleRows.push(`
+                    <tr>
+                        <td><strong>📊 Analista de Negocios</strong></td>
+                        <td>${baPercent}%</td>
+                        <td>${data.calculations.roleHours.ba.toFixed(1)} hs</td>
+                    </tr>
+                `);
+            }
+            
+            if (data.calculations.roleHours.lt > 0) {
+                const ltPercent = (data.calculations.roleHours.lt / totalHours * 100).toFixed(1);
+                roleRows.push(`
+                    <tr>
+                        <td><strong>👨‍💻 Líder Técnico</strong></td>
+                        <td>${ltPercent}%</td>
+                        <td>${data.calculations.roleHours.lt.toFixed(1)} hs</td>
+                    </tr>
+                `);
+            }
+            
+            const devPercent = (data.calculations.roleHours.dev / totalHours * 100).toFixed(1);
+            roleRows.push(`
+                <tr>
+                    <td><strong>💻 Desarrolladores</strong></td>
+                    <td>${devPercent}%</td>
+                    <td>${data.calculations.roleHours.dev.toFixed(1)} hs</td>
+                </tr>
+            `);
+            
+            if (data.calculations.roleHours.qa > 0) {
+                const qaPercent = (data.calculations.roleHours.qa / totalHours * 100).toFixed(1);
+                roleRows.push(`
+                    <tr>
+                        <td><strong>🔍 QA</strong></td>
+                        <td>${qaPercent}%</td>
+                        <td>${data.calculations.roleHours.qa.toFixed(1)} hs</td>
+                    </tr>
+                `);
+            }
+            
+            if (data.calculations.roleHours.pm > 0) {
+                const pmPercent = (data.calculations.roleHours.pm / totalHours * 100).toFixed(1);
+                roleRows.push(`
+                    <tr>
+                        <td><strong>📋 Project Manager</strong></td>
+                        <td>${pmPercent}%</td>
+                        <td>${data.calculations.roleHours.pm.toFixed(1)} hs</td>
+                    </tr>
+                `);
+            }
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Rol</th>
+                        <th>% del Total</th>
+                        <th>Horas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${roleRows.join('')}
+                    <tr style="background: #e8f4e8; font-weight: bold; border-top: 2px solid #667eea;">
+                        <td>✓ TOTAL</td>
+                        <td>100%</td>
+                        <td>${totalHours.toFixed(1)} hs</td>
+                    </tr>
+                </tbody>
+            `;
+            
+            // Calculation steps
+            const stepsDiv = document.getElementById('calculationSteps');
+            
+            // Build role weights string
+            let roleWeightsStr = 'DEV: 100%';
+            if (data.calculations.roleHours.ba > 0) roleWeightsStr += ` + BA: ${data.inputs.roles.ba.percentage}%`;
+            if (data.calculations.roleHours.lt > 0) roleWeightsStr += ` + LT: ${data.inputs.roles.lt.percentage}%`;
+            if (data.calculations.roleHours.qa > 0) roleWeightsStr += ` + QA: ${data.inputs.roles.qa.percentage}%`;
+            if (data.calculations.roleHours.pm > 0) roleWeightsStr += ` + PM: ${data.inputs.roles.pm.percentage}%`;
+            roleWeightsStr += ` = ${data.calculations.totalWeight}%`;
+            
+            // Calculate total hours for verification
+            const totalRoleHours = data.calculations.roleHours.dev + 
+                                   data.calculations.roleHours.ba + 
+                                   data.calculations.roleHours.lt + 
+                                   data.calculations.roleHours.qa + 
+                                   data.calculations.roleHours.pm;
+            
+            stepsDiv.innerHTML = `
+                <div class="calculation-step">
+                    <strong>1. Horas Base:</strong> ${data.inputs.estimatedHours} hs
+                </div>
+                <div class="calculation-step">
+                    <strong>2. Factor Total de Desvío:</strong> ${data.inputs.factors.totalFactor.toFixed(3)}x
+                    <br><small>(Madurez: ${data.inputs.factors.clientMaturity} × Complejidad: ${data.inputs.factors.technicalComplexity} × 
+                    Ambientes: ${data.inputs.factors.environmentAvailability} × Alcance: ${data.inputs.factors.scopeChanges} × 
+                    Dependencias: ${data.inputs.factors.externalDependencies})</small>
+                </div>
+                <div class="calculation-step">
+                    <strong>3. Horas Ajustadas (Total Proyecto):</strong> ${data.inputs.estimatedHours} × ${data.inputs.factors.totalFactor.toFixed(2)} = ${data.calculations.adjustedHours.toFixed(1)} hs
+                </div>
+                <div class="calculation-step">
+                    <strong>4. Peso Total de Roles:</strong> ${roleWeightsStr}
+                    <br><small>DEV = ${data.calculations.adjustedHours.toFixed(1)} × (100/${data.calculations.totalWeight}) = ${data.calculations.roleHours.dev.toFixed(1)} hs (${data.calculations.devPercentage.toFixed(1)}% del total)</small>
+                </div>
+                <div class="calculation-step">
+                    <strong>5. Distribución por Rol:</strong> DEV: ${data.calculations.roleHours.dev.toFixed(1)}hs
+                    ${data.calculations.roleHours.ba > 0 ? ` | BA: ${data.calculations.roleHours.ba.toFixed(1)}hs` : ''}
+                    ${data.calculations.roleHours.lt > 0 ? ` | LT: ${data.calculations.roleHours.lt.toFixed(1)}hs` : ''}
+                    ${data.calculations.roleHours.qa > 0 ? ` | QA: ${data.calculations.roleHours.qa.toFixed(1)}hs` : ''}
+                    ${data.calculations.roleHours.pm > 0 ? ` | PM: ${data.calculations.roleHours.pm.toFixed(1)}hs` : ''}
+                    <br><small>✓ Suma total: ${totalRoleHours.toFixed(1)} hs</small>
+                </div>
+                <div class="calculation-step">
+                    <strong>6. Capacidad DEV:</strong> ${data.inputs.developers.length} desarrollador${data.inputs.developers.length > 1 ? 'es' : ''} = ${data.calculations.devCapacityPerDay.toFixed(1)} hs/día
+                </div>
+                <div class="calculation-step">
+                    <strong>7. Cálculo por Fases:</strong> ${data.calculations.phases.phases.length} fases identificadas con traslapes
+                </div>
+                <div class="calculation-step">
+                    <strong>8. Días Base (con traslapes):</strong> ${data.calculations.baseDays.toFixed(1)} días
+                </div>
+                <div class="calculation-step">
+                    <strong>9. Buffers:</strong> Técnico (${data.inputs.buffers.technical}%) + Cliente (${data.inputs.buffers.client}%) + Integración (${data.inputs.buffers.integration}%)
+                </div>
+                <div class="calculation-step">
+                    <strong>10. Días Finales:</strong> ${data.calculations.baseDays.toFixed(1)} × ${data.inputs.buffers.total.toFixed(2)} = <strong>${data.calculations.calendarDays} días laborales</strong>
+                </div>
+            `;
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Export to JSON
+        function exportToJSON() {
+            const dataStr = JSON.stringify(estimationData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `estimacion-rpa-${estimationData.projectName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Export to PDF
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const data = estimationData;
+            
+            let yPos = 20;
+            const lineHeight = 7;
+            const margin = 20;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            
+            // Title
+            doc.setFontSize(18);
+            doc.setTextColor(102, 126, 234);
+            doc.text('VORTEX-RPA-Estimador v4.0', margin, yPos);
+            yPos += 10;
+            
+            // Project name
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(data.projectName, margin, yPos);
+            yPos += 8;
+            
+            // Date
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Fecha: ${new Date(data.timestamp).toLocaleString('es-AR')}`, margin, yPos);
+            yPos += 12;
+            
+            // Results section
+            doc.setFontSize(12);
+            doc.setTextColor(102, 126, 234);
+            doc.text('RESULTADOS PRINCIPALES', margin, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Horas Estimadas Iniciales: ${data.inputs.estimatedHours} hs`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Horas Ajustadas: ${data.calculations.adjustedHours.toFixed(1)} hs`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Factor de Desvio Total: ${data.inputs.factors.totalFactor.toFixed(2)}x`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Dias Laborales Estimados: ${data.calculations.calendarDays} dias (${data.calculations.weeks} semanas)`, margin, yPos);
+            yPos += 12;
+            
+            // Phases with Gantt-style visualization
+            doc.setFontSize(12);
+            doc.setTextColor(102, 126, 234);
+            doc.text('TIMELINE DEL PROYECTO', margin, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const totalProjectDays = data.calculations.baseDays;
+            const ganttWidth = pageWidth - (2 * margin);
+            const ganttStartX = margin;
+            let cumulativeDays = 0;
+            
+            data.calculations.phases.phases.forEach((phase, index) => {
+                const isCritical = phase.name === 'Desarrollo';
+                
+                // Phase header
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${index + 1}. ${phase.name}${isCritical ? ' (RUTA CRITICA)' : ''}`, margin, yPos);
+                yPos += 6;
+                
+                // Visual bar
+                const barStartX = ganttStartX + (cumulativeDays / totalProjectDays) * ganttWidth;
+                const barWidth = (phase.days / totalProjectDays) * ganttWidth;
+                
+                // Draw bar
+                if (isCritical) {
+                    doc.setFillColor(255, 107, 107);
+                } else {
+                    doc.setFillColor(78, 205, 196);
+                }
+                doc.roundedRect(barStartX, yPos - 3, barWidth, 6, 1, 1, 'F');
+                
+                yPos += 5;
+                
+                // Phase details
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(80, 80, 80);
+                doc.text(`${phase.days.toFixed(1)} dias | ${phase.hours.toFixed(1)} hs | Roles: ${phase.roles.join(', ')}`, margin + 5, yPos);
+                yPos += 5;
+                doc.setTextColor(0, 0, 0);
+                
+                // Overlap calculation
+                let overlapFactor = 1.0;
+                if (phase.name === 'Análisis y Levantamiento') overlapFactor = 0.9;
+                else if (phase.name === 'Testing y QA') overlapFactor = 0.8;
+                else if (phase.name === 'UAT y Cierre') overlapFactor = 0.7;
+                
+                cumulativeDays += phase.days * overlapFactor;
+                yPos += 3;
+            });
+            
+            // Timeline axis
+            yPos += 5;
+            doc.setDrawColor(200, 200, 200);
+            doc.line(ganttStartX, yPos, ganttStartX + ganttWidth, yPos);
+            
+            // Axis labels
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Dia 0', ganttStartX, yPos + 4);
+            doc.text(`Dia ${totalProjectDays.toFixed(0)}`, ganttStartX + ganttWidth - 15, yPos + 4);
+            
+            yPos += 12;
+            
+            // Team configuration
+            if (yPos > 220) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setTextColor(102, 126, 234);
+            doc.text('CONFIGURACION DEL EQUIPO', margin, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Desarrolladores: ${data.inputs.developers.length} (${data.calculations.devCapacityPerDay.toFixed(1)} hs/dia)`, margin, yPos);
+            yPos += lineHeight;
+            
+            if (data.calculations.roleHours.ba > 0) {
+                doc.text(`Analista de Negocios: ${data.inputs.roles.ba.dedication} (${data.calculations.roleHours.ba.toFixed(1)} hs - ${data.inputs.roles.ba.percentage}% de DEV)`, margin, yPos);
+                yPos += lineHeight;
+            }
+            
+            if (data.calculations.roleHours.lt > 0) {
+                doc.text(`Lider Tecnico: ${data.inputs.roles.lt.dedication} (${data.calculations.roleHours.lt.toFixed(1)} hs - ${data.inputs.roles.lt.percentage}% de DEV)`, margin, yPos);
+                yPos += lineHeight;
+            }
+            
+            if (data.calculations.roleHours.qa > 0) {
+                doc.text(`QA: ${data.inputs.roles.qa.dedication} (${data.calculations.roleHours.qa.toFixed(1)} hs - ${data.inputs.roles.qa.percentage}% de DEV)`, margin, yPos);
+                yPos += lineHeight;
+            }
+            
+            if (data.calculations.roleHours.pm > 0) {
+                doc.text(`Project Manager: ${data.inputs.roles.pm.dedication} (${data.calculations.roleHours.pm.toFixed(1)} hs - ${data.inputs.roles.pm.percentage}% de DEV)`, margin, yPos);
+                yPos += lineHeight;
+            }
+            
+            yPos += 5;
+            
+            // Factors section
+            if (yPos > 230) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setTextColor(102, 126, 234);
+            doc.text('FACTORES MULTIPLICADORES', margin, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Madurez Cliente RPA: ${data.inputs.factors.clientMaturity}x`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Complejidad Tecnica: ${data.inputs.factors.technicalComplexity}x`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Disponibilidad Ambientes: ${data.inputs.factors.environmentAvailability}x`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Cambios de Alcance: ${data.inputs.factors.scopeChanges}x`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Dependencias Externas: ${data.inputs.factors.externalDependencies}x`, margin, yPos);
+            yPos += lineHeight;
+            doc.setFont(undefined, 'bold');
+            doc.text(`Factor Total: ${data.inputs.factors.totalFactor.toFixed(2)}x`, margin, yPos);
+            
+            // Save PDF
+            doc.save(`VORTEX-RPA-Estimador-v4-${data.projectName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+    </script>
+
+    <div style="text-align:center; padding:20px; margin-top:30px;">
+        <div style="color:rgba(255,255,255,0.4); font-size:0.78em;">
+            VORTEX &mdash; CX &amp; Automation &mdash; Portal RPA &mdash; 2026
+        </div>
+    </div>
+</body>
+</html>

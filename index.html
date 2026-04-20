@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teamwork — Importador a Excel + Estimador RPA</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #eef1f6;
+    --surface: #ffffff;
+    --surface2: #f4f6fb;
+    --border: #d8dee9;
+    --accent: #2563eb;
+    --accent2: #6366f1;
+    --green: #059669;
+    --red: #dc2626;
+    --yellow: #d97706;
+    --text: #152032;
+    --muted: #5c6b82;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --header-bg: rgba(255, 255, 255, 0.92);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: linear-gradient(180deg, #e8ecf4 0%, var(--bg) 48%, #e4e9f2 100%);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    background: var(--header-bg);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-sm);
+    z-index: 100;
+  }
+
+  .logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+
+  header span {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-left: 4px;
+  }
+
+  .header-badge {
+    margin-left: auto;
+    background: rgba(5, 150, 105, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(5, 150, 105, 0.28);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  /* Dashboard modelo RPA v4 (alineado a rpa-calc-iniciativa.html, tema claro) */
+  .rpa-dash-wrap {
+    margin: 0 0 28px;
+    padding: 22px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: linear-gradient(145deg, #eef0ff 0%, #f8f9fc 40%, #e8f0ff 100%);
+    box-shadow: var(--shadow-sm);
+  }
+  .rpa-dash-wrap h3 {
+    font-size: 1.15rem;
+    margin: 0 0 16px;
+    text-align: center;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .rpa-dash-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .rpa-dash-empty {
+    text-align: center;
+    padding: 18px 14px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+  }
+  .rpa-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .rpa-result-card {
+    background: var(--surface);
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  .rpa-result-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .rpa-result-value { font-size: 1.65rem; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+  .rpa-result-sub { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  .rpa-result-card-wide { grid-column: 1 / -1; }
+  .rpa-phase-timeline {
+    background: var(--surface);
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-top: 12px;
+  }
+  .rpa-timeline-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .rpa-timeline-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--muted); }
+  .rpa-legend-item { display: flex; align-items: center; gap: 5px; }
+  .rpa-legend-dot { width: 16px; height: 10px; border-radius: 3px; }
+  .rpa-legend-critical { background: linear-gradient(135deg, #f87171, #ef4444); }
+  .rpa-legend-normal { background: linear-gradient(135deg, #2dd4bf, #14b8a6); }
+  .rpa-gantt-track {
+    position: relative;
+    height: 48px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: visible;
+  }
+  .rpa-gantt-row { margin-bottom: 16px; }
+  .rpa-phase-badge {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .rpa-phase-badge.critical {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+  .rpa-gantt-bar {
+    position: absolute;
+    height: 36px;
+    top: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  }
+  .rpa-gantt-bar.critical { background: linear-gradient(135deg, #f87171, #dc2626); }
+  .rpa-gantt-bar.normal { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+  .rpa-gantt-bar-inner { display: flex; justify-content: space-between; width: 100%; gap: 8px; }
+  .rpa-gantt-info {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .rpa-role-tag {
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .rpa-timeline-axis { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .rpa-axis-line {
+    height: 2px;
+    background: var(--border);
+    margin: 6px 0;
+    position: relative;
+  }
+  .rpa-axis-marker { position: absolute; width: 1px; height: 8px; background: var(--muted); top: -3px; opacity: 0.5; }
+  .rpa-axis-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+  .rpa-dist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .rpa-dist-table th, .rpa-dist-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .rpa-dist-table th { color: var(--muted); font-weight: 600; font-size: 11px; }
+  .rpa-dist-table tr.total-row { background: rgba(5, 150, 105, 0.08); font-weight: 600; border-top: 2px solid var(--accent2); }
+  .rpa-calc-details {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .rpa-calc-details h4 { font-size: 13px; margin: 0 0 12px; color: var(--text); }
+  .rpa-calc-step {
+    font-size: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    line-height: 1.45;
+  }
+  .rpa-calc-step:last-child { border-bottom: none; }
+  .rpa-calc-step small { color: var(--muted); font-size: 11px; }
+
+  /* Layout */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .step {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+
+  .step:last-child { border-right: none; }
+  .step.active { color: var(--accent); background: rgba(37, 99, 235, 0.08); }
+  .step.done { color: var(--green); background: rgba(5, 150, 105, 0.08); }
+
+  .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .step.done .step-num { background: var(--green); border-color: var(--green); color: #fff; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Section */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  input, textarea, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 7px;
+    font-family: var(--sans);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  input[readonly] {
+    cursor: default;
+    opacity: 0.92;
+    background: var(--surface2);
+  }
+
+  textarea { resize: vertical; min-height: 72px; }
+
+  select option { background: var(--surface2); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 7px;
+    border: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: rgba(247, 95, 95, 0.1);
+    border: 1px solid rgba(247, 95, 95, 0.3);
+    color: var(--red);
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .btn-danger:hover { background: rgba(247, 95, 95, 0.2); }
+
+  .btn-success {
+    background: var(--green);
+    color: #fff;
+  }
+  .btn-success:hover { background: #047857; transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Task cards */
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .task-card:hover { border-color: rgba(37, 99, 235, 0.35); }
+
+  .task-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .task-index {
+    width: 26px; height: 26px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--accent);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .task-name-preview {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .task-meta {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    display: flex;
+    gap: 12px;
+  }
+
+  .task-body {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+
+  .task-body.open { display: block; padding-top: 16px; }
+
+  .chevron {
+    transition: transform 0.2s;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .task-card.open .chevron { transform: rotate(180deg); }
+
+  /* Subtasks */
+  .subtask-list { margin-top: 16px; }
+
+  .subtask-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 120px 120px auto;
+    gap: 8px;
+    align-items: start;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 8px;
+  }
+
+  .subtask-row input { padding: 7px 10px; font-size: 13px; }
+
+  /* Preview */
+  .preview-tree {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .tree-project {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tree-task {
+    margin: 8px 0;
+    color: var(--text);
+  }
+
+  .tree-task-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 5px;
+    cursor: default;
+  }
+
+  .tree-task-line:hover { background: rgba(15, 23, 42, 0.04); }
+
+  .tree-subtask {
+    margin-left: 28px;
+    margin-top: 4px;
+  }
+
+  .tree-subtask-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .tree-subtask-line:hover { background: rgba(15, 23, 42, 0.04); color: var(--text); }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-task { background: var(--accent2); }
+  .dot-sub { background: #94a3b8; }
+
+  .badge-hours {
+    margin-left: auto;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  /* Summary stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green { color: var(--green); }
+
+  /* Nav buttons */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: none;
+    z-index: 999;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
+
+  #excel-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 360px;
+    overflow: auto;
+  }
+
+  .excel-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .excel-preview-table th,
+  .excel-preview-table td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: left;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .excel-preview-table th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .excel-preview-table tr:nth-child(even) td { background: rgba(15, 23, 42, 0.03); }
+
+  /* Panel cálculo RPA (rpa-calc-iniciativa) */
+  .calc-details {
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .calc-details > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .calc-details > summary::-webkit-details-marker { display: none; }
+  .calc-details[open] > summary { border-bottom: 1px solid var(--border); }
+  .calc-inner { padding: 16px; font-size: 13px; }
+  .calc-inner .section-mini {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 16px 0 10px;
+  }
+  .calc-inner .section-mini:first-child { margin-top: 0; }
+  .calc-slider-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .calc-slider-row input[type="range"] { width: 100%; }
+  .calc-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 44px;
+    text-align: right;
+  }
+  .calc-role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 640px) {
+    .calc-role-grid { grid-template-columns: 1fr; }
+  }
+  .calc-role-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .calc-role-line:last-child { border-bottom: none; }
+  .calc-role-line label { display: flex; align-items: center; gap: 6px; margin: 0; text-transform: none; letter-spacing: 0; }
+  .calc-role-line input[type="number"] { width: 72px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TW</div>
+  <h1>Teamwork Projects</h1><span>// Importación Excel</span>
+  <div class="header-badge">● ONLINE</div>
+</header>
+
+<div class="container">
+
+  <div class="steps" id="steps">
+    <div class="step active" onclick="goTo(0)" id="step0">
+      <div class="step-num">1</div> Proyecto
+    </div>
+    <div class="step" onclick="goTo(1)" id="step1">
+      <div class="step-num">2</div> Etapas
+    </div>
+    <div class="step" onclick="goToPreview()" id="step2">
+      <div class="step-num">3</div> Revisión & Exportar
+    </div>
+  </div>
+
+  <!-- PANEL 1: Datos del proyecto -->
+  <div class="panel active" id="panel0">
+    <div class="section-title">Datos del proyecto</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Nombre del proyecto *</label>
+        <input id="proj-nombre" type="text" placeholder="Ej: Automatización Facturación RPA">
+      </div>
+      <div class="field">
+        <label>Cliente *</label>
+        <input id="proj-cliente" type="text" placeholder="Ej: Empresa S.A.">
+      </div>
+      <div class="field">
+        <label>Fecha de inicio *</label>
+        <input id="proj-fecha" type="date">
+      </div>
+      <div class="field">
+        <label>Estimado por</label>
+        <input id="proj-estimador" type="text" placeholder="Ej: Mariela Britos">
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn btn-primary" onclick="goToTasks()">Continuar → Etapas</button>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Etapas del proyecto (ciclo RPA: Preventa, Gestión, Relevamiento, etc.) -->
+  <div class="panel" id="panel1">
+    <div class="section-title">Etapas y actividades</div>
+    <p style="font-size:13px;color:var(--muted);margin:-8px 0 12px;line-height:1.5">Al venir desde <strong>Datos del proyecto</strong> se cargan solas las etapas <strong>FASE B — Proyecto</strong>. Acá <strong>solo editás Desarrollo</strong> (import o manual). El resto de etapas <strong>no se muestran</strong>; sus horas se completan al <strong>importar el Excel</strong> y al pasar a <strong>Revisión</strong>.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-desarrollo-xlsx-input').click()">📥 Importar actividades Desarrollo (.xlsx)</button>
+      <input type="file" id="import-desarrollo-xlsx-input" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="importDesarrolloEstimacionXlsx(event)">
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 18px;line-height:1.45">El archivo debe ser el Excel de estimación de desarrollo RPA (hoja con <strong>Detalle de la estimación</strong>: columnas Item-aplicativo, Actividad, Horas, Estado, Observaciones), igual que <code>Copia de Estimación Desarrollo_*.xlsx</code>. Las filas se convierten en el árbol de actividades bajo la etapa <strong>Desarrollo</strong>.</p>
+
+    <details class="calc-details" id="calc-details">
+      <summary>Parámetros del estimador RPA — factores y roles como rpa-calc-iniciativa.html (H fija en Desarrollo)</summary>
+      <div class="calc-inner">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:14px;line-height:1.5">Las horas del detalle en <strong>Desarrollo</strong> (import o carga manual) son <strong>solo DEV</strong>: no se usan para “repartir” BA/LT/QA/PM ni se modifican al calcular. Los <strong>% de roles de soporte</strong> se aplican sobre <strong>H×factor</strong> (riesgo), no sobre H en bruto. Los factores y buffers marcan la <strong>duración en días</strong> de Desarrollo. Las demás etapas se completan <strong>al importar el Excel</strong> y otra vez <strong>al ir a Revisión</strong>.</p>
+        <div class="section-mini">Agenda</div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Tipo de agenda</label>
+          <select id="calc_agendaType">
+            <option value="1.1">Bloqueada (dedicación exclusiva) — 1.1</option>
+            <option value="1.3" selected>1–3 actividades priorizadas — 1.3</option>
+            <option value="1.6">Sin priorización clara — 1.6</option>
+          </select>
+        </div>
+        <div class="section-mini">Factores multiplicadores (1.0–2.0)</div>
+        <div class="calc-slider-row"><label style="margin:0">Madurez cliente RPA</label><span class="calc-val" id="calc_clientMaturityValue">1.00x</span></div>
+        <input type="range" id="calc_clientMaturity" min="1" max="2" step="0.1" value="1">
+        <div class="calc-slider-row"><label style="margin:0">Complejidad técnica</label><span class="calc-val" id="calc_technicalComplexityValue">1.00x</span></div>
+        <input type="range" id="calc_technicalComplexity" min="1" max="2" step="0.1" value="1">
+        <div class="calc-slider-row"><label style="margin:0">Disponibilidad de ambientes</label><span class="calc-val" id="calc_environmentAvailabilityValue">1.00x</span></div>
+        <input type="range" id="calc_environmentAvailability" min="1" max="2" step="0.1" value="1">
+        <div class="calc-slider-row"><label style="margin:0">Cambios de alcance</label><span class="calc-val" id="calc_scopeChangesValue">1.00x</span></div>
+        <input type="range" id="calc_scopeChanges" min="1" max="2" step="0.1" value="1">
+        <div class="calc-slider-row"><label style="margin:0">Dependencias externas</label><span class="calc-val" id="calc_externalDependenciesValue">1.00x</span></div>
+        <input type="range" id="calc_externalDependencies" min="1" max="2" step="0.1" value="1">
+
+        <div class="section-mini">Equipo desarrollo</div>
+        <div class="form-grid" style="margin-bottom:8px">
+          <div class="field">
+            <label>Cantidad de desarrolladores</label>
+            <input type="number" id="calc_devCount" min="1" max="8" value="1">
+          </div>
+          <div class="field">
+            <label>Dedicación</label>
+            <select id="calc_devDedication">
+              <option value="full-time" selected>Full-time (6.5 hs efect./día c/u)</option>
+              <option value="part-time">Part-time (3.5 hs efect./día c/u)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section-mini">Roles de soporte (% sobre horas DEV del modelo)</div>
+        <div class="calc-role-line">
+          <label><input type="checkbox" id="calc_baEnabled" checked> BA</label>
+          <input type="number" id="calc_baPercentage" value="30" min="0" max="100" title="% sobre DEV">
+          <select id="calc_baDedication"><option value="part-time">PT 3.5h</option><option value="full-time">FT 6.5h</option></select>
+          <span style="color:var(--muted);font-size:11px">Inicio %</span>
+          <input type="number" id="calc_baStartPercentage" value="60" min="0" max="100" title="% BA al inicio">
+        </div>
+        <div class="calc-role-line">
+          <label><input type="checkbox" id="calc_ltEnabled" checked> LT</label>
+          <input type="number" id="calc_ltPercentage" value="35" min="0" max="100">
+          <select id="calc_ltDedication"><option value="part-time">PT</option><option value="full-time">FT</option></select>
+          <span style="color:var(--muted);font-size:11px">En DEV %</span>
+          <input type="number" id="calc_ltDevPercentage" value="70" min="0" max="100">
+        </div>
+        <div class="calc-role-line">
+          <label><input type="checkbox" id="calc_qaEnabled"> QA</label>
+          <input type="number" id="calc_qaPercentage" value="25" min="0" max="100">
+          <select id="calc_qaDedication"><option value="part-time">PT</option><option value="full-time">FT</option></select>
+          <span style="color:var(--muted);font-size:11px">Testing %</span>
+          <input type="number" id="calc_qaTestPercentage" value="80" min="0" max="100">
+        </div>
+        <div class="calc-role-line">
+          <label><input type="checkbox" id="calc_pmEnabled" checked> PM</label>
+          <input type="number" id="calc_pmPercentage" value="20" min="0" max="100">
+          <select id="calc_pmDedication"><option value="part-time" selected>PT</option><option value="full-time">FT</option></select>
+        </div>
+
+        <div class="section-mini">Buffers (%)</div>
+        <div class="form-grid">
+          <div class="field"><label>Técnico</label><input type="number" id="calc_technicalBuffer" value="15" min="0" max="50"></div>
+          <div class="field"><label>Cliente</label><input type="number" id="calc_clientBuffer" value="25" min="0" max="50"></div>
+          <div class="field"><label>Integración</label><input type="number" id="calc_integrationBuffer" value="10" min="0" max="30"></div>
+        </div>
+        <p id="calc-result-hint" style="margin-top:12px;font-size:12px;color:var(--muted);font-family:var(--mono)"></p>
+      </div>
+    </details>
+
+    <div id="task-list">
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        No hay etapas aún. Agregá la primera etapa.
+      </div>
+    </div>
+
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;font-family:var(--mono)">Las otras etapas se rellenan al importar el Excel y al continuar a Revisión.</p>
+
+    <div class="nav-row">
+      <button class="btn btn-secondary" onclick="goTo(0)">← Volver</button>
+      <button class="btn btn-primary" onclick="goToPreview()">Continuar → Revisión</button>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Preview & Export -->
+  <div class="panel" id="panel2">
+    <div class="section-title">Resumen del proyecto</div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="section-title" style="margin-top:28px">Dashboard — estimación RPA v4</div>
+    <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px;line-height:1.5">El modelo v4 se aplica al <strong>importar</strong> y al pasar a esta pantalla: factor, timeline, roles, export JSON/PDF. Las <strong>hs importadas son solo DEV</strong> (H); los % BA/LT/QA/PM van sobre <strong>H×factor</strong>, no sobre H.</p>
+    <div id="rpa-dashboard-root"></div>
+
+    <div class="section-title">Árbol de etapas</div>
+    <div class="preview-tree" id="preview-tree"></div>
+
+    <div class="section-title" style="margin-top: 32px;">Vista previa Excel (import)</div>
+    <div id="excel-preview"></div>
+
+    <div class="nav-row">
+      <button class="btn btn-secondary" onclick="goTo(1)">← Editar etapas</button>
+      <button class="btn btn-success" onclick="exportExcel()">
+        ⬇ Descargar Excel para Teamwork
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let tasks = [];
+let currentPanel = 0;
+/** Último snapshot alineado a `estimationData` de rpa-calc-iniciativa.html (JSON/PDF). */
+let lastEstimationData = null;
+
+/** Actividad hoja (sin hijos por defecto). */
+function mkActividad(nombre) {
+  return { nombre, horas: 0, responsable: '', estado: 'Pendiente', observaciones: '', subtareas: [] };
+}
+
+/** Etapa con lista de nombres de actividades (FASE B — Proyecto, rpa-lifecycle.html). */
+function mkEtapa(nombreEtapa, nombresActividades) {
+  return {
+    nombre: nombreEtapa,
+    horas: 0,
+    responsable: '',
+    estado: 'Pendiente',
+    observaciones: '',
+    subtareas: nombresActividades.map(mkActividad),
+  };
+}
+
+/**
+ * Estructura FASE B: PROYECTO — mismo desglose que en rpa-lifecycle.html
+ * (etapas = bloques; actividades = ítems numerados en el portal).
+ */
+function getPlantillaFaseBProyecto() {
+  return [
+    mkEtapa('Gestión', [
+      'Gestionar el proyecto',
+      'Poner en ejecución el proyecto',
+      'Realizar la retrospectiva del proyecto',
+    ]),
+    mkEtapa('Relevamiento', [
+      'Validar los prerrequisitos',
+      'Relevar y analizar el proceso a automatizar',
+      'Actualización del flujo general del proceso',
+      'Construir el documento del diseño del proceso (PDD)',
+      'Aprobar el PDD',
+      'Actualizar la planificación del proyecto',
+      'Asignar el proyecto al desarrollador',
+    ]),
+    mkEtapa('Diseño y Arquitectura', [
+      'Diseñar la automatización',
+      'Construir el documento de diseño de la solución (SDD)',
+      'Aprobar el SDD',
+    ]),
+    mkEtapa('Desarrollo', [
+      'Desarrollar la automatización',
+      'Realizar las pruebas unitarias',
+      'Realizar las pruebas integrales',
+      'Construir el manual técnico',
+      'Construir el manual del usuario',
+    ]),
+    mkEtapa('Puesta en Producción', [
+      'Migrar / poner en producción',
+    ]),
+    mkEtapa('Período de Garantía', [
+      'Monitorear y ajustar la automatización dentro del alcance',
+    ]),
+  ];
+}
+
+/** Importa el árbol de actividades desde el .xlsx de estimación de desarrollo (mismo layout que Copia de Estimación Desarrollo_*.xlsx). */
+async function importDesarrolloEstimacionXlsx(ev) {
+  const input = ev.target;
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    showToast('Elegí un archivo .xlsx', 'var(--red)');
+    return;
+  }
+  let devList = indicesEtapasDesarrollo();
+  if (devList.length === 0) {
+    const ok = confirm(
+      'No hay etapa «Desarrollo». ¿Agregar la etapa Desarrollo vacía y cargar ahí las actividades del Excel?'
+    );
+    if (!ok) return;
+    addEtapaDesarrolloVacia();
+    devList = indicesEtapasDesarrollo();
+    if (devList.length === 0) {
+      showToast('No se pudo crear la etapa Desarrollo.', 'var(--red)');
+      return;
+    }
+  }
+  const devIx = devList[0];
+  const existing = tasks[devIx].subtareas || [];
+  const hasContent = existing.some((s) => (s.nombre && s.nombre.trim()) || (parseFloat(s.horas) || 0) > 0 || (s.subtareas && s.subtareas.length));
+  if (hasContent) {
+    const ok = confirm(
+      'La etapa Desarrollo ya tiene actividades. ¿Reemplazarlas por las del archivo Excel? (no se modifican las demás etapas.)'
+    );
+    if (!ok) return;
+  }
+  const fd = new FormData();
+  fd.append('file', file, file.name);
+  try {
+    const res = await fetch('/import-desarrollo-xlsx', { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.detail || res.statusText || 'Error al importar', 'var(--red)');
+      return;
+    }
+    if (!data.subtareas || !Array.isArray(data.subtareas)) {
+      showToast('Respuesta inválida del servidor.', 'var(--red)');
+      return;
+    }
+    tasks[devIx].subtareas = data.subtareas;
+    const meta = data.metadata || {};
+    if (meta.cliente && !String(document.getElementById('proj-cliente').value || '').trim()) {
+      document.getElementById('proj-cliente').value = meta.cliente;
+    }
+    if (meta.estimado_por && !String(document.getElementById('proj-estimador').value || '').trim()) {
+      document.getElementById('proj-estimador').value = meta.estimado_por;
+    }
+    renderTasks();
+    showToast(`Actividades importadas (${data.subtareas.length} ítem(es) aplicativo)`);
+    const calcR = tryRunDistribucionRpaCalc(true);
+    if (!calcR.ok) {
+      showToast(calcR.message || 'Importación lista; revisá horas o parámetros para el reparto.', 'var(--yellow)');
+    }
+  } catch (e) {
+    showToast(String(e.message || e), 'var(--red)');
+  }
+}
+
+// --- Modelo estimación RPA (lógica alineada a rpa-calc-iniciativa.html) ---
+
+function getCalcDevelopers() {
+  const raw = parseInt(String(document.getElementById('calc_devCount').value), 10);
+  const n = Math.min(8, Math.max(1, Number.isFinite(raw) ? raw : 1));
+  const ded = document.getElementById('calc_devDedication').value;
+  const eff = ded === 'full-time' ? 6.5 : 3.5;
+  return Array.from({ length: n }, (_, i) => ({ id: i + 1, dedication: ded, effectiveHours: eff }));
+}
+
+function collectCalcConfig() {
+  const eff = (ded) => (ded === 'full-time' ? 6.5 : 3.5);
+  return {
+    agendaType: parseFloat(document.getElementById('calc_agendaType').value),
+    clientMaturity: parseFloat(document.getElementById('calc_clientMaturity').value),
+    technicalComplexity: parseFloat(document.getElementById('calc_technicalComplexity').value),
+    environmentAvailability: parseFloat(document.getElementById('calc_environmentAvailability').value),
+    scopeChanges: parseFloat(document.getElementById('calc_scopeChanges').value),
+    externalDependencies: parseFloat(document.getElementById('calc_externalDependencies').value),
+    developers: getCalcDevelopers(),
+    roles: {
+      ba: {
+        enabled: document.getElementById('calc_baEnabled').checked,
+        percentage: parseFloat(document.getElementById('calc_baPercentage').value),
+        dedication: document.getElementById('calc_baDedication').value,
+        startPercentage: parseFloat(document.getElementById('calc_baStartPercentage').value),
+        effectiveHours: eff(document.getElementById('calc_baDedication').value),
+      },
+      lt: {
+        enabled: document.getElementById('calc_ltEnabled').checked,
+        percentage: parseFloat(document.getElementById('calc_ltPercentage').value),
+        dedication: document.getElementById('calc_ltDedication').value,
+        devPercentage: parseFloat(document.getElementById('calc_ltDevPercentage').value),
+        effectiveHours: eff(document.getElementById('calc_ltDedication').value),
+      },
+      qa: {
+        enabled: document.getElementById('calc_qaEnabled').checked,
+        percentage: parseFloat(document.getElementById('calc_qaPercentage').value),
+        dedication: document.getElementById('calc_qaDedication').value,
+        testPercentage: parseFloat(document.getElementById('calc_qaTestPercentage').value),
+        effectiveHours: eff(document.getElementById('calc_qaDedication').value),
+      },
+      pm: {
+        enabled: document.getElementById('calc_pmEnabled').checked,
+        percentage: parseFloat(document.getElementById('calc_pmPercentage').value),
+        dedication: document.getElementById('calc_pmDedication').value,
+        effectiveHours: eff(document.getElementById('calc_pmDedication').value),
+      },
+    },
+    technicalBuffer: parseFloat(document.getElementById('calc_technicalBuffer').value),
+    clientBuffer: parseFloat(document.getElementById('calc_clientBuffer').value),
+    integrationBuffer: parseFloat(document.getElementById('calc_integrationBuffer').value),
+  };
+}
+
+function calculatePhasesRpa(roleHours, roles, devCapacityPerDay, agendaFactor, devDetailHours, totalFactor) {
+  const phases = [];
+  let cumulativeDays = 0;
+  const H = devDetailHours != null ? devDetailHours : roleHours.dev;
+  const F = totalFactor != null ? totalFactor : 1;
+  if (roles.ba.enabled && roleHours.ba > 0) {
+    const analysisHours = roleHours.ba * (roles.ba.startPercentage / 100);
+    const analysisDays = (analysisHours / roles.ba.effectiveHours) * agendaFactor;
+    phases.push({
+      name: 'Análisis y Levantamiento',
+      hours: analysisHours,
+      days: analysisDays,
+      roles: ['BA'],
+      description: `${analysisHours.toFixed(1)}hs de levantamiento de proceso y documentación`,
+    });
+    cumulativeDays += analysisDays * 0.9;
+  }
+  const devScaledForCalendar = H * F;
+  const devDays = (devScaledForCalendar / devCapacityPerDay) * agendaFactor;
+  const ltInDevHours = roles.lt.enabled ? roleHours.lt * (roles.lt.devPercentage / 100) : 0;
+  const devRoles = ['DEV'];
+  if (roles.lt.enabled && ltInDevHours > 0) devRoles.push('LT');
+  if (roles.pm.enabled) devRoles.push('PM');
+  phases.push({
+    name: 'Desarrollo',
+    hours: H,
+    days: devDays,
+    roles: devRoles,
+    description: `${H.toFixed(1)}hs en detalle (import); duración con factor ${F.toFixed(2)}×`,
+  });
+  cumulativeDays += devDays;
+  if (roles.qa.enabled && roleHours.qa > 0) {
+    const testingHours = roleHours.qa * (roles.qa.testPercentage / 100);
+    const testingDays = (testingHours / roles.qa.effectiveHours) * agendaFactor;
+    phases.push({
+      name: 'Testing y QA',
+      hours: testingHours,
+      days: testingDays,
+      roles: ['QA', 'DEV'],
+      description: `${testingHours.toFixed(1)}hs de testing integral y corrección de defectos`,
+    });
+    cumulativeDays += testingDays * 0.8;
+  }
+  const closureHours = Math.max(
+    roles.ba.enabled ? roleHours.ba * (1 - roles.ba.startPercentage / 100) : 0,
+    roles.lt.enabled ? roleHours.lt * (1 - roles.lt.devPercentage / 100) : 0
+  );
+  if (closureHours > 0) {
+    const closureCapacity = Math.max(
+      roles.ba.enabled ? roles.ba.effectiveHours : 0,
+      roles.lt.enabled ? roles.lt.effectiveHours : 0
+    );
+    if (closureCapacity > 0) {
+      const closureDays = (closureHours / closureCapacity) * agendaFactor;
+      const closureRoles = [];
+      if (roles.ba.enabled) closureRoles.push('BA');
+      if (roles.lt.enabled) closureRoles.push('LT');
+      if (roles.pm.enabled) closureRoles.push('PM');
+      phases.push({
+        name: 'UAT y Cierre',
+        hours: closureHours,
+        days: closureDays,
+        roles: closureRoles,
+        description: `${closureHours.toFixed(1)}hs de UAT, documentación final y paso a producción`,
+      });
+      cumulativeDays += closureDays * 0.7;
+    }
+  }
+  return { phases, totalDays: cumulativeDays };
+}
+
+function computeRpaModel(estimatedHours, cfg) {
+  const H = estimatedHours;
+  const totalFactor =
+    cfg.clientMaturity *
+    cfg.technicalComplexity *
+    cfg.environmentAvailability *
+    cfg.scopeChanges *
+    cfg.externalDependencies;
+  const devCapacityPerDay = cfg.developers.reduce((s, d) => s + d.effectiveHours, 0);
+  const roles = cfg.roles;
+  /** H = solo DEV (import). Los % BA/LT/QA/PM no consumen H: se aplican sobre el esfuerzo ajustado por riesgo (H×F). */
+  const supportBasis = H * totalFactor;
+  const roleHours = {
+    dev: H,
+    ba: roles.ba.enabled ? (supportBasis * roles.ba.percentage) / 100 : 0,
+    lt: roles.lt.enabled ? (supportBasis * roles.lt.percentage) / 100 : 0,
+    qa: roles.qa.enabled ? (supportBasis * roles.qa.percentage) / 100 : 0,
+    pm: roles.pm.enabled ? (supportBasis * roles.pm.percentage) / 100 : 0,
+  };
+  const supportSum = roleHours.ba + roleHours.lt + roleHours.qa + roleHours.pm;
+  const adjustedHours = H + supportSum;
+  const devRiskScaled = supportBasis;
+  const phases = calculatePhasesRpa(roleHours, roles, devCapacityPerDay, cfg.agendaType, H, totalFactor);
+  const tb = cfg.technicalBuffer / 100;
+  const cb = cfg.clientBuffer / 100;
+  const ib = cfg.integrationBuffer / 100;
+  const totalBuffer = 1 + tb + cb + ib;
+  const calendarDays = Math.ceil(phases.totalDays * totalBuffer);
+  const weeks = (calendarDays / 5).toFixed(1);
+  let totalWeight = 100;
+  if (roles.ba.enabled) totalWeight += roles.ba.percentage;
+  if (roles.lt.enabled) totalWeight += roles.lt.percentage;
+  if (roles.qa.enabled) totalWeight += roles.qa.percentage;
+  if (roles.pm.enabled) totalWeight += roles.pm.percentage;
+  const devPercentage = adjustedHours > 0 ? (H / adjustedHours) * 100 : 100;
+  return {
+    adjustedHours,
+    totalFactor,
+    roleHours,
+    roles,
+    phases,
+    baseDays: phases.totalDays,
+    calendarDays,
+    weeks,
+    devCapacityPerDay,
+    devPercentage,
+    totalWeight,
+    devImportHours: H,
+    devRiskScaled,
+    supportBasisForRoles: supportBasis,
+    supportSum,
+  };
+}
+
+function buildEstimationDataFromCalc(projectName, cliente, estimatedHours, cfg, model) {
+  const tb = cfg.technicalBuffer / 100;
+  const cb = cfg.clientBuffer / 100;
+  const ib = cfg.integrationBuffer / 100;
+  const totalBuffer = 1 + tb + cb + ib;
+  return {
+    projectName: projectName || 'Proyecto',
+    cliente: cliente || '',
+    timestamp: new Date().toISOString(),
+    inputs: {
+      estimatedHours,
+      agendaType: cfg.agendaType,
+      factors: {
+        clientMaturity: cfg.clientMaturity,
+        technicalComplexity: cfg.technicalComplexity,
+        environmentAvailability: cfg.environmentAvailability,
+        scopeChanges: cfg.scopeChanges,
+        externalDependencies: cfg.externalDependencies,
+        totalFactor: model.totalFactor,
+      },
+      buffers: {
+        technical: cfg.technicalBuffer,
+        client: cfg.clientBuffer,
+        integration: cfg.integrationBuffer,
+        total: totalBuffer,
+      },
+      developers: cfg.developers,
+      roles: cfg.roles,
+    },
+    calculations: {
+      adjustedHours: model.adjustedHours,
+      devCapacityPerDay: model.devCapacityPerDay,
+      roleHours: model.roleHours,
+      totalWeight: model.totalWeight,
+      devPercentage: model.devPercentage,
+      phases: model.phases,
+      baseDays: model.baseDays,
+      calendarDays: model.calendarDays,
+      weeks: model.weeks,
+      devImportHours: model.devImportHours,
+      devRiskScaled: model.devRiskScaled,
+      supportBasisForRoles: model.supportBasisForRoles,
+      supportSum: model.supportSum,
+    },
+  };
+}
+
+function renderRpaCalcDashboard() {
+  const root = document.getElementById('rpa-dashboard-root');
+  if (!root) return;
+  const data = lastEstimationData;
+  if (!data || !data.calculations) {
+    root.innerHTML = `
+      <div class="rpa-dash-wrap">
+        <div class="rpa-dash-empty">
+          Todavía no hay un cálculo v4 en esta sesión. En <strong>Etapas</strong>, importá el Excel de Desarrollo o cargá horas y pulsá <strong>Continuar → Revisión</strong> (el modelo se ejecuta al importar y al entrar acá).
+        </div>
+      </div>`;
+    return;
+  }
+
+  const totalProjectDays = Math.max(data.calculations.baseDays, 0.01);
+  let cumulativeDays = 0;
+  let ganttHTML = `
+    <div class="rpa-phase-timeline">
+      <div class="rpa-timeline-header">
+        <div>Línea de tiempo del proyecto</div>
+        <div class="rpa-timeline-legend">
+          <span class="rpa-legend-item"><span class="rpa-legend-dot rpa-legend-critical"></span> Ruta crítica</span>
+          <span class="rpa-legend-item"><span class="rpa-legend-dot rpa-legend-normal"></span> Fase</span>
+        </div>
+      </div>`;
+  data.calculations.phases.phases.forEach((phase, index) => {
+    const isCritical = phase.name === 'Desarrollo';
+    const phaseClass = isCritical ? 'critical' : 'normal';
+    const startPercent = (cumulativeDays / totalProjectDays) * 100;
+    const widthPercent = (phase.days / totalProjectDays) * 100;
+    let overlapFactor = 1.0;
+    if (phase.name === 'Análisis y Levantamiento') overlapFactor = 0.9;
+    else if (phase.name === 'Testing y QA') overlapFactor = 0.8;
+    else if (phase.name === 'UAT y Cierre') overlapFactor = 0.7;
+    const desc = esc(phase.description || '');
+    const rolesHtml = (phase.roles || []).map((role) => `<span class="rpa-role-tag">${esc(role)}</span>`).join('');
+    ganttHTML += `
+      <div class="rpa-gantt-row">
+        <div class="rpa-phase-badge${isCritical ? ' critical' : ''}">
+          ${index + 1}. ${esc(phase.name)}
+          ${isCritical ? ' <span style="color:#b91c1c;font-size:11px">· ruta crítica</span>' : ''}
+        </div>
+        <div class="rpa-gantt-track">
+          <div class="rpa-gantt-bar ${phaseClass}" style="left:${startPercent}%;width:${Math.max(widthPercent, 0.5)}%;" title="${desc}">
+            <div class="rpa-gantt-bar-inner">
+              <span>${phase.hours.toFixed(1)} hs</span>
+              <span>${phase.days.toFixed(1)} d</span>
+            </div>
+          </div>
+        </div>
+        <div class="rpa-gantt-info">${rolesHtml}<span>· ${desc}</span></div>
+      </div>`;
+    cumulativeDays += phase.days * overlapFactor;
+  });
+  const axisMarkers = [0, 25, 50, 75, 100];
+  ganttHTML += `
+      <div class="rpa-timeline-axis">
+        <div class="rpa-axis-line">
+          ${axisMarkers.map((p) => `<div class="rpa-axis-marker" style="left:${p}%"></div>`).join('')}
+        </div>
+        <div class="rpa-axis-labels">
+          <span>Día 0</span>
+          <span>Día ${(totalProjectDays * 0.25).toFixed(0)}</span>
+          <span>Día ${(totalProjectDays * 0.5).toFixed(0)}</span>
+          <span>Día ${(totalProjectDays * 0.75).toFixed(0)}</span>
+          <span>Día ${totalProjectDays.toFixed(0)}</span>
+        </div>
+      </div>
+    </div>`;
+
+  const totalHours = data.calculations.adjustedHours;
+  const rh = data.calculations.roleHours;
+  const supportSum =
+    data.calculations.supportSum != null
+      ? data.calculations.supportSum
+      : rh.ba + rh.lt + rh.qa + rh.pm;
+  const devRiskScaled =
+    data.calculations.devRiskScaled != null
+      ? data.calculations.devRiskScaled
+      : data.inputs.estimatedHours * data.inputs.factors.totalFactor;
+  const roleRows = [];
+  if (rh.ba > 0) {
+    roleRows.push(`<tr><td><strong>Analista de Negocios</strong></td><td>${((rh.ba / totalHours) * 100).toFixed(1)}%</td><td>${rh.ba.toFixed(1)} hs</td></tr>`);
+  }
+  if (rh.lt > 0) {
+    roleRows.push(`<tr><td><strong>Líder Técnico</strong></td><td>${((rh.lt / totalHours) * 100).toFixed(1)}%</td><td>${rh.lt.toFixed(1)} hs</td></tr>`);
+  }
+  roleRows.push(
+    `<tr><td><strong>Desarrolladores</strong></td><td>${((rh.dev / totalHours) * 100).toFixed(1)}%</td><td>${rh.dev.toFixed(1)} hs</td></tr>`
+  );
+  if (rh.qa > 0) {
+    roleRows.push(`<tr><td><strong>QA</strong></td><td>${((rh.qa / totalHours) * 100).toFixed(1)}%</td><td>${rh.qa.toFixed(1)} hs</td></tr>`);
+  }
+  if (rh.pm > 0) {
+    roleRows.push(`<tr><td><strong>Project Manager</strong></td><td>${((rh.pm / totalHours) * 100).toFixed(1)}%</td><td>${rh.pm.toFixed(1)} hs</td></tr>`);
+  }
+
+  const totalRoleHours = rh.dev + rh.ba + rh.lt + rh.qa + rh.pm;
+  const f = data.inputs.factors;
+
+  root.innerHTML = `
+    <div class="rpa-dash-wrap">
+      <h3>Resultados de la estimación</h3>
+      <div class="rpa-dash-actions">
+        <button type="button" class="btn btn-success" onclick="exportEstimationToJSON()">Exportar JSON</button>
+        <button type="button" class="btn btn-secondary" onclick="exportEstimationToPDF()">Exportar PDF</button>
+      </div>
+      <div class="rpa-grid-2">
+        <div class="rpa-result-card">
+          <div class="rpa-result-label">Horas totales (modelo)</div>
+          <div class="rpa-result-value">${data.calculations.adjustedHours.toFixed(1)}</div>
+          <div class="rpa-result-sub">H importada solo DEV (${data.inputs.estimatedHours.toFixed(1)} hs) + ${supportSum.toFixed(1)} hs soporte (BA/LT/QA/PM % sobre H×factor, no sobre H)</div>
+        </div>
+        <div class="rpa-result-card">
+          <div class="rpa-result-label">Factor de desvío total</div>
+          <div class="rpa-result-value">${data.inputs.factors.totalFactor.toFixed(2)}x</div>
+          <div class="rpa-result-sub">Multiplicador combinado del proyecto</div>
+        </div>
+        <div class="rpa-result-card rpa-result-card-wide">
+          <div class="rpa-result-label">Días laborales estimados</div>
+          <div class="rpa-result-value">${data.calculations.calendarDays}</div>
+          <div class="rpa-result-sub">Aproximadamente ${data.calculations.weeks} semanas laborales</div>
+        </div>
+      </div>
+      ${ganttHTML}
+      <div class="rpa-phase-timeline" style="margin-top:14px">
+        <div class="rpa-result-label" style="margin-bottom:10px;font-weight:600;color:var(--text)">Distribución de horas por rol</div>
+        <table class="rpa-dist-table">
+          <thead><tr><th>Rol</th><th>% del total</th><th>Horas</th></tr></thead>
+          <tbody>
+            ${roleRows.join('')}
+            <tr class="total-row"><td>Total</td><td>100%</td><td>${totalHours.toFixed(1)} hs</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="rpa-calc-details">
+        <h4>Detalles del cálculo</h4>
+        <div class="rpa-calc-step"><strong>1. Horas importadas (H, detalle Desarrollo):</strong> ${data.inputs.estimatedHours} hs — <em>no se redistribuyen</em> al calcular</div>
+        <div class="rpa-calc-step"><strong>2. Factor total (calendario):</strong> ${f.totalFactor.toFixed(3)}x<br><small>Madurez: ${f.clientMaturity} × Complejidad: ${f.technicalComplexity} × Ambientes: ${f.environmentAvailability} × Alcance: ${f.scopeChanges} × Dependencias: ${f.externalDependencies}. Se usa en la <strong>duración en días</strong> de la fase Desarrollo (H×F).</small></div>
+        <div class="rpa-calc-step"><strong>3. Soporte (BA/LT/QA/PM):</strong> ${supportSum.toFixed(1)} hs — los % se aplican sobre <strong>H×F = ${devRiskScaled.toFixed(1)} hs</strong>, no sobre las horas importadas H (esas son solo DEV y no se reparten entre roles)</div>
+        <div class="rpa-calc-step"><strong>4. Total horas en el modelo:</strong> H + soporte = <strong>${data.calculations.adjustedHours.toFixed(1)} hs</strong> (${data.calculations.devPercentage.toFixed(1)}% del total corresponde a DEV importado)</div>
+        <div class="rpa-calc-step"><strong>5. Agenda fase Desarrollo:</strong> duración con H × F = ${devRiskScaled.toFixed(1)} hs equivalentes (misma base que dimensiona soporte; el detalle de actividades sigue sumando H)</div>
+        <div class="rpa-calc-step"><strong>6. Distribución por rol:</strong> DEV: ${rh.dev.toFixed(1)}hs (import)${rh.ba > 0 ? ` | BA: ${rh.ba.toFixed(1)}hs` : ''}${rh.lt > 0 ? ` | LT: ${rh.lt.toFixed(1)}hs` : ''}${rh.qa > 0 ? ` | QA: ${rh.qa.toFixed(1)}hs` : ''}${rh.pm > 0 ? ` | PM: ${rh.pm.toFixed(1)}hs` : ''}<br><small>Suma: ${totalRoleHours.toFixed(1)} hs</small></div>
+        <div class="rpa-calc-step"><strong>7. Capacidad DEV:</strong> ${data.inputs.developers.length} desarrollador(es) = ${data.calculations.devCapacityPerDay.toFixed(1)} hs/día</div>
+        <div class="rpa-calc-step"><strong>8. Fases:</strong> ${data.calculations.phases.phases.length} fases con traslapes</div>
+        <div class="rpa-calc-step"><strong>9. Días base (con traslapes):</strong> ${data.calculations.baseDays.toFixed(1)} días</div>
+        <div class="rpa-calc-step"><strong>10. Buffers:</strong> Técnico (${data.inputs.buffers.technical}%) + Cliente (${data.inputs.buffers.client}%) + Integración (${data.inputs.buffers.integration}%)</div>
+        <div class="rpa-calc-step"><strong>11. Días finales:</strong> ${data.calculations.baseDays.toFixed(1)} × ${data.inputs.buffers.total.toFixed(2)} = <strong>${data.calculations.calendarDays} días laborales</strong></div>
+      </div>
+    </div>`;
+}
+
+function exportEstimationToJSON() {
+  if (!lastEstimationData || !lastEstimationData.projectName) {
+    showToast('Primero importá el Excel en Etapas o pasá a Revisión con horas en Desarrollo.', 'var(--yellow)');
+    return;
+  }
+  const dataStr = JSON.stringify(lastEstimationData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  const slug = lastEstimationData.projectName.replace(/\s+/g, '-').toLowerCase();
+  link.download = `estimacion-rpa-${slug}-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON descargado');
+}
+
+function exportEstimationToPDF() {
+  if (!lastEstimationData || !lastEstimationData.projectName) {
+    showToast('Primero importá el Excel en Etapas o pasá a Revisión con horas en Desarrollo.', 'var(--yellow)');
+    return;
+  }
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    showToast('No se cargó jsPDF (revisá la conexión o el bloqueo del CDN).', 'var(--red)');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const data = lastEstimationData;
+  let yPos = 20;
+  const lineHeight = 7;
+  const margin = 20;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.setFontSize(18);
+  doc.setTextColor(102, 126, 234);
+  doc.text('VORTEX-RPA-Estimador v4.0', margin, yPos);
+  yPos += 10;
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.projectName, margin, yPos);
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Fecha: ${new Date(data.timestamp).toLocaleString('es-AR')}`, margin, yPos);
+  yPos += 12;
+  doc.setFontSize(12);
+  doc.setTextColor(102, 126, 234);
+  doc.text('RESULTADOS PRINCIPALES', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Horas importadas Desarrollo (H): ${data.inputs.estimatedHours} hs (sin cambiar detalle)`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Horas totales modelo (H + soporte): ${data.calculations.adjustedHours.toFixed(1)} hs`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Factor de desvío total: ${data.inputs.factors.totalFactor.toFixed(2)}x`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Días laborales: ${data.calculations.calendarDays} (${data.calculations.weeks} semanas)`, margin, yPos);
+  yPos += 12;
+  doc.setFontSize(12);
+  doc.setTextColor(102, 126, 234);
+  doc.text('TIMELINE DEL PROYECTO', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  const ganttWidth = pageWidth - 2 * margin;
+  const ganttStartX = margin;
+  let cumulativeDays = 0;
+  const totalProjectDays = Math.max(data.calculations.baseDays, 0.01);
+  data.calculations.phases.phases.forEach((phase, index) => {
+    const isCritical = phase.name === 'Desarrollo';
+    doc.setFont(undefined, 'bold');
+    doc.text(`${index + 1}. ${phase.name}${isCritical ? ' (RUTA CRÍTICA)' : ''}`, margin, yPos);
+    yPos += 6;
+    const barStartX = ganttStartX + (cumulativeDays / totalProjectDays) * ganttWidth;
+    const barWidth = (phase.days / totalProjectDays) * ganttWidth;
+    if (isCritical) doc.setFillColor(255, 107, 107);
+    else doc.setFillColor(78, 205, 196);
+    doc.roundedRect(barStartX, yPos - 3, Math.max(barWidth, 2), 6, 1, 1, 'F');
+    yPos += 5;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    const rolesStr = (phase.roles || []).join(', ');
+    doc.text(`${phase.days.toFixed(1)} días | ${phase.hours.toFixed(1)} hs | Roles: ${rolesStr}`, margin + 5, yPos);
+    yPos += 5;
+    doc.setTextColor(0, 0, 0);
+    let overlapFactor = 1.0;
+    if (phase.name === 'Análisis y Levantamiento') overlapFactor = 0.9;
+    else if (phase.name === 'Testing y QA') overlapFactor = 0.8;
+    else if (phase.name === 'UAT y Cierre') overlapFactor = 0.7;
+    cumulativeDays += phase.days * overlapFactor;
+    yPos += 3;
+    if (yPos > 270) {
+      doc.addPage();
+      yPos = 20;
+    }
+  });
+  yPos += 5;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(ganttStartX, yPos, ganttStartX + ganttWidth, yPos);
+  yPos += 12;
+  if (yPos > 240) {
+    doc.addPage();
+    yPos = 20;
+  }
+  doc.setFontSize(12);
+  doc.setTextColor(102, 126, 234);
+  doc.text('CONFIGURACIÓN DEL EQUIPO', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Desarrolladores: ${data.inputs.developers.length} (${data.calculations.devCapacityPerDay.toFixed(1)} hs/día)`, margin, yPos);
+  yPos += lineHeight;
+  if (data.calculations.roleHours.ba > 0) {
+    doc.text(`BA: ${data.inputs.roles.ba.dedication} (${data.calculations.roleHours.ba.toFixed(1)} hs)`, margin, yPos);
+    yPos += lineHeight;
+  }
+  if (data.calculations.roleHours.lt > 0) {
+    doc.text(`LT: ${data.inputs.roles.lt.dedication} (${data.calculations.roleHours.lt.toFixed(1)} hs)`, margin, yPos);
+    yPos += lineHeight;
+  }
+  if (data.calculations.roleHours.qa > 0) {
+    doc.text(`QA: ${data.inputs.roles.qa.dedication} (${data.calculations.roleHours.qa.toFixed(1)} hs)`, margin, yPos);
+    yPos += lineHeight;
+  }
+  if (data.calculations.roleHours.pm > 0) {
+    doc.text(`PM: ${data.inputs.roles.pm.dedication} (${data.calculations.roleHours.pm.toFixed(1)} hs)`, margin, yPos);
+    yPos += lineHeight;
+  }
+  yPos += 5;
+  if (yPos > 230) {
+    doc.addPage();
+    yPos = 20;
+  }
+  doc.setFontSize(12);
+  doc.setTextColor(102, 126, 234);
+  doc.text('FACTORES MULTIPLICADORES', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  const fx = data.inputs.factors;
+  doc.text(`Madurez cliente RPA: ${fx.clientMaturity}x`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Complejidad técnica: ${fx.technicalComplexity}x`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Disponibilidad ambientes: ${fx.environmentAvailability}x`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Cambios de alcance: ${fx.scopeChanges}x`, margin, yPos);
+  yPos += lineHeight;
+  doc.text(`Dependencias externas: ${fx.externalDependencies}x`, margin, yPos);
+  yPos += lineHeight;
+  doc.setFont(undefined, 'bold');
+  doc.text(`Factor total: ${fx.totalFactor.toFixed(2)}x`, margin, yPos);
+  const fn = `VORTEX-RPA-Estimador-v4-${data.projectName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fn);
+  showToast('PDF descargado');
+}
+
+function collectLeaves(subtareas) {
+  const out = [];
+  function walk(arr) {
+    if (!arr) return;
+    for (const n of arr) {
+      if (n.subtareas && n.subtareas.length) walk(n.subtareas);
+      else out.push(n);
+    }
+  }
+  walk(subtareas || []);
+  return out;
+}
+
+function findEtapaIndexByName(taskList, matcher) {
+  return taskList.findIndex((t) => matcher(String(t.nombre || '')));
+}
+
+function sumLeafHoursUnderEtapa(etapa) {
+  return collectLeaves(etapa.subtareas).reduce((a, n) => a + (parseFloat(n.horas) || 0), 0);
+}
+
+function setUniformLeaves(etapa, pool) {
+  const leaves = collectLeaves(etapa.subtareas);
+  if (!leaves.length || pool <= 0) return;
+  const h = pool / leaves.length;
+  leaves.forEach((x) => {
+    x.horas = Math.round(h * 10) / 10;
+  });
+}
+
+/**
+ * Suma horas en etapas no-DEV a partir del modelo (BA/LT/QA/PM como % sobre H importada).
+ * La etapa Desarrollo no se modifica: el detalle importado / editado se conserva.
+ */
+function applyCalcDistribution(taskList, model) {
+  const { roleHours, roles } = model;
+  const analysisH = roles.ba.enabled ? roleHours.ba * (roles.ba.startPercentage / 100) : 0;
+  const closureH = Math.max(
+    roles.ba.enabled ? roleHours.ba * (1 - roles.ba.startPercentage / 100) : 0,
+    roles.lt.enabled ? roleHours.lt * (1 - roles.lt.devPercentage / 100) : 0
+  );
+  const ltOutside = roles.lt.enabled ? roleHours.lt * ((100 - roles.lt.devPercentage) / 100) : 0;
+
+  const ixDev = findEtapaIndexByName(taskList, (n) => /desarrollo/i.test(n));
+  if (ixDev < 0) throw new Error('No hay etapa "Desarrollo".');
+
+  const ixGes = findEtapaIndexByName(taskList, (n) => /gestión|gestion/i.test(n));
+  if (ixGes >= 0 && roleHours.pm > 0) setUniformLeaves(taskList[ixGes], roleHours.pm);
+
+  const ixRel = findEtapaIndexByName(taskList, (n) => /relevamiento/i.test(n));
+  if (ixRel >= 0 && analysisH > 0) setUniformLeaves(taskList[ixRel], analysisH);
+
+  const ixDis = findEtapaIndexByName(taskList, (n) => /diseño|arquitectura/i.test(n));
+  const designPool = ltOutside * 0.45 + roleHours.dev * 0.06;
+  if (ixDis >= 0 && designPool > 0) setUniformLeaves(taskList[ixDis], designPool);
+
+  const ixPue = findEtapaIndexByName(taskList, (n) => /puesta|producción|produccion/i.test(n));
+  if (ixPue >= 0 && closureH > 0) setUniformLeaves(taskList[ixPue], closureH * 0.55);
+
+  const ixGar = findEtapaIndexByName(taskList, (n) => /garantía|garantia/i.test(n));
+  if (ixGar >= 0 && closureH > 0) setUniformLeaves(taskList[ixGar], closureH * 0.45);
+}
+
+/**
+ * Ejecuta el modelo v4 y reparte horas en etapas no-DEV. Si silent=true, no muestra toasts de éxito (útil al importar o al ir a Revisión).
+ * @returns {{ ok: true } | { ok: false, message: string }}
+ */
+function tryRunDistribucionRpaCalc(silent) {
+  const fail = (msg, color) => {
+    if (!silent) showToast(msg, color || 'var(--red)');
+    return { ok: false, message: msg };
+  };
+  const ixDev = findEtapaIndexByName(tasks, (n) => /desarrollo/i.test(n));
+  if (ixDev < 0) return fail('Necesitás una etapa cuyo nombre incluya «Desarrollo».');
+  const estimatedHours = sumLeafHoursUnderEtapa(tasks[ixDev]);
+  if (!(estimatedHours > 0)) {
+    return fail('La suma de horas en Desarrollo tiene que ser mayor a 0 (importá el Excel o cargá horas en las actividades).', 'var(--yellow)');
+  }
+  let cfg;
+  try {
+    cfg = collectCalcConfig();
+  } catch (e) {
+    return fail('Error leyendo parámetros: ' + e.message);
+  }
+  if (!cfg.developers.length || !(cfg.developers[0].effectiveHours > 0)) {
+    return fail('Revisá la cantidad y dedicación de desarrolladores.');
+  }
+  const model = computeRpaModel(estimatedHours, cfg);
+  try {
+    applyCalcDistribution(tasks, model);
+  } catch (e) {
+    return fail(e.message || String(e));
+  }
+  lastEstimationData = buildEstimationDataFromCalc(
+    document.getElementById('proj-nombre').value.trim(),
+    document.getElementById('proj-cliente').value.trim(),
+    estimatedHours,
+    cfg,
+    model
+  );
+  renderTasks();
+  const hint = document.getElementById('calc-result-hint');
+  if (hint) {
+    hint.textContent =
+      `Último cálculo: Desarrollo sin cambios (${estimatedHours.toFixed(1)} hs solo DEV) · +${model.supportSum.toFixed(1)} hs soporte (% sobre H×F) · factor ${model.totalFactor.toFixed(2)}× · ~${model.calendarDays} días (${model.weeks} sem.) · capacidad ${model.devCapacityPerDay.toFixed(1)} hs/día`;
+  }
+  if (currentPanel === 2) buildPreview().catch(() => {});
+  if (!silent) showToast('Horas agregadas en las demás etapas (Desarrollo sin cambios)');
+  return { ok: true };
+}
+
+function initCalcSliders() {
+  const pairs = [
+    ['calc_clientMaturity', 'calc_clientMaturityValue'],
+    ['calc_technicalComplexity', 'calc_technicalComplexityValue'],
+    ['calc_environmentAvailability', 'calc_environmentAvailabilityValue'],
+    ['calc_scopeChanges', 'calc_scopeChangesValue'],
+    ['calc_externalDependencies', 'calc_externalDependenciesValue'],
+  ];
+  pairs.forEach(([id, vid]) => {
+    const el = document.getElementById(id);
+    const v = document.getElementById(vid);
+    if (!el || !v) return;
+    const upd = () => {
+      v.textContent = parseFloat(el.value).toFixed(2) + 'x';
+    };
+    el.addEventListener('input', upd);
+    upd();
+  });
+}
+
+// Set today's date
+document.getElementById('proj-fecha').valueAsDate = new Date();
+initCalcSliders();
+
+function showToast(msg, color = 'var(--green)') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color;
+  t.style.color = color;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function goTo(idx) {
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i < idx) s.classList.add('done');
+    else if (i === idx) s.classList.add('active');
+  });
+  currentPanel = idx;
+  window.scrollTo(0, 0);
+  if (idx === 1) {
+    if (tasks.length === 0) {
+      const nombre = document.getElementById('proj-nombre').value.trim();
+      const cliente = document.getElementById('proj-cliente').value.trim();
+      const fecha = document.getElementById('proj-fecha').value;
+      if (nombre && cliente && fecha) tasks = getPlantillaFaseBProyecto();
+    }
+    renderTasks();
+  }
+  if (idx === 2) {
+    buildPreview().catch(() => {});
+  }
+}
+
+function goToTasks() {
+  const nombre = document.getElementById('proj-nombre').value.trim();
+  const cliente = document.getElementById('proj-cliente').value.trim();
+  const fecha = document.getElementById('proj-fecha').value;
+  if (!nombre || !cliente || !fecha) {
+    showToast('Completá los campos obligatorios', 'var(--red)');
+    return;
+  }
+  tasks = getPlantillaFaseBProyecto();
+  goTo(1);
+  setTimeout(() => {
+    document.querySelectorAll('.task-card').forEach((c) => {
+      const b = c.querySelector('.task-body');
+      if (b) b.classList.remove('open');
+      c.classList.remove('open');
+    });
+  }, 50);
+}
+
+async function goToPreview() {
+  if (tasks.length === 0) {
+    showToast('Volvé a Datos del proyecto y pulsá Continuar → Etapas para cargar la plantilla FASE B.', 'var(--yellow)');
+    return;
+  }
+  if (indicesEtapasDesarrollo().length === 0) {
+    showToast('Tiene que existir al menos una etapa cuyo nombre incluya «Desarrollo».', 'var(--yellow)');
+    return;
+  }
+  const calcR = tryRunDistribucionRpaCalc(true);
+  if (!calcR.ok) {
+    showToast(calcR.message || 'No se pudo calcular.', 'var(--yellow)');
+    return;
+  }
+  goTo(2);
+}
+
+// --- Task Management ---
+
+function serializeSub(s) {
+  return {
+    nombre: s.nombre,
+    horas: parseFloat(s.horas) || 0,
+    responsable: s.responsable || '',
+    estado: s.estado || 'Pendiente',
+    observaciones: s.observaciones || '',
+    subtareas: (s.subtareas || []).map(serializeSub),
+  };
+}
+
+function addTask() {
+  tasks.push({ nombre: '', horas: 0, responsable: '', estado: 'Pendiente', observaciones: '', subtareas: [] });
+  renderTasks();
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.task-card');
+    const last = cards[cards.length - 1];
+    if (last) {
+      last.querySelector('.task-body').classList.add('open');
+      last.classList.add('open');
+      last.querySelector('input[data-field="nombre"]').focus();
+    }
+  }, 50);
+}
+
+/** Útil si no usás la plantilla FASE B: solo la etapa editable en el panel. */
+function addEtapaDesarrolloVacia() {
+  tasks.push({
+    nombre: 'Desarrollo',
+    horas: 0,
+    responsable: '',
+    estado: 'Pendiente',
+    observaciones: '',
+    subtareas: [emptySubtask()],
+  });
+  renderTasks();
+  setTimeout(() => {
+    const ixList = indicesEtapasDesarrollo();
+    const ix = ixList.length ? ixList[ixList.length - 1] : null;
+    const card = ix != null ? taskCardEl(ix) : null;
+    if (card) {
+      card.querySelector('.task-body').classList.add('open');
+      card.classList.add('open');
+    }
+  }, 50);
+}
+
+function removeTask(i) {
+  tasks.splice(i, 1);
+  renderTasks();
+}
+
+function emptySubtask() {
+  return { nombre: '', horas: 0, responsable: '', estado: 'Pendiente', observaciones: '', subtareas: [] };
+}
+
+function taskCardEl(taskIndex) {
+  return document.getElementById('task-card-' + taskIndex);
+}
+
+function addSubtask(i) {
+  tasks[i].subtareas.push(emptySubtask());
+  renderTasks();
+  // keep card open
+  setTimeout(() => {
+    const card = taskCardEl(i);
+    if (card) {
+      card.querySelector('.task-body').classList.add('open');
+      card.classList.add('open');
+      const subs = card.querySelectorAll('.subtask-row input[type="text"]');
+      if (subs.length) subs[subs.length - 1].focus();
+    }
+  }, 50);
+}
+
+function removeNestedSub(ti, path) {
+  const t = tasks[ti];
+  if (path.length === 1) {
+    t.subtareas.splice(path[0], 1);
+  } else {
+    let node = t.subtareas[path[0]];
+    for (let i = 1; i < path.length - 1; i++) {
+      node = node.subtareas[path[i]];
+    }
+    node.subtareas.splice(path[path.length - 1], 1);
+  }
+  renderTasks();
+  setTimeout(() => {
+    const card = taskCardEl(ti);
+    if (card) { card.querySelector('.task-body').classList.add('open'); card.classList.add('open'); }
+  }, 50);
+}
+
+function addNestedSub(ti, path) {
+  const t = tasks[ti];
+  if (path.length === 0) {
+    t.subtareas.push(emptySubtask());
+  } else {
+    let node = t.subtareas[path[0]];
+    for (let i = 1; i < path.length; i++) {
+      node = node.subtareas[path[i]];
+    }
+    if (!node.subtareas) node.subtareas = [];
+    node.subtareas.push(emptySubtask());
+  }
+  renderTasks();
+  setTimeout(() => {
+    const card = taskCardEl(ti);
+    if (card) {
+      card.querySelector('.task-body').classList.add('open');
+      card.classList.add('open');
+    }
+  }, 50);
+}
+
+function toggleCard(i) {
+  const card = taskCardEl(i);
+  if (!card) return;
+  const body = card.querySelector('.task-body');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  card.classList.toggle('open', !isOpen);
+}
+
+function sumHoursInTree(subs) {
+  if (!subs || !subs.length) return 0;
+  return subs.reduce((acc, x) => acc + (parseFloat(x.horas) || 0) + sumHoursInTree(x.subtareas), 0);
+}
+
+function countSubNodes(subs) {
+  if (!subs || !subs.length) return 0;
+  return subs.reduce((acc, x) => acc + 1 + countSubNodes(x.subtareas), 0);
+}
+
+function isEtapaDesarrollo(task) {
+  return /desarrollo/i.test(String(task && task.nombre ? task.nombre : ''));
+}
+
+function indicesEtapasDesarrollo() {
+  return tasks.map((_, i) => i).filter((i) => isEtapaDesarrollo(tasks[i]));
+}
+
+function renderSubTree(ti, subs, pathPrefix) {
+  if (!subs || !subs.length) return '';
+  return subs.map((sub, si) => {
+    const path = pathPrefix.concat(si);
+    const pathJson = JSON.stringify(path);
+    const depth = path.length;
+    const pad = 6 + (depth - 1) * 14;
+    const nested = renderSubTree(ti, sub.subtareas || [], path);
+    return `
+      <div class="subtask-block" style="margin-left:${pad}px;padding-left:10px;border-left:2px solid var(--border)">
+        <div class="subtask-row">
+          <div class="field">
+            <label>Actividad <span style="color:var(--muted);font-size:10px">(nivel ${depth})</span></label>
+            <input type="text" value="${esc(sub.nombre)}" placeholder="Nombre (los guiones se agregan al exportar)"
+              oninput="updateNested(${ti}, ${pathJson}, 'nombre', this.value)">
+          </div>
+          <div class="field">
+            <label>Horas</label>
+            <input type="number" min="0" step="0.5" value="${sub.horas || ''}" placeholder="0"
+              oninput="updateNested(${ti}, ${pathJson}, 'horas', this.value)">
+          </div>
+          <div class="field">
+            <label>Responsable</label>
+            <input type="text" value="${esc(sub.responsable)}" placeholder="Ej: PM, DEV"
+              oninput="updateNested(${ti}, ${pathJson}, 'responsable', this.value)">
+          </div>
+          <div class="field">
+            <label>Estado</label>
+            <select onchange="updateNested(${ti}, ${pathJson}, 'estado', this.value)">
+              ${['Pendiente','En curso','DONE','Bloqueado'].map(s => `<option${sub.estado===s?' selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field" style="justify-content:flex-end;padding-top:22px;display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 10px" onclick="addNestedSub(${ti}, ${pathJson})">＋ Sub</button>
+            <button type="button" class="btn btn-danger" onclick="removeNestedSub(${ti}, ${pathJson})">✕</button>
+          </div>
+        </div>
+        <div class="field" style="grid-column:1/-1;margin-bottom:8px">
+          <label>Observaciones</label>
+          <textarea style="min-height:48px" placeholder="Notas..." oninput="updateNested(${ti}, ${pathJson}, 'observaciones', this.value)">${esc(sub.observaciones)}</textarea>
+        </div>
+        ${nested}
+      </div>`;
+  }).join('');
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  if (tasks.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p style="max-width:420px;margin:0 auto 16px">No hay etapas. Usá <strong>← Volver</strong> y <strong>Continuar → Etapas</strong> en Datos del proyecto para cargar la plantilla <strong>FASE B — Proyecto</strong>.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost" onclick="addEtapaDesarrolloVacia()">＋ Solo etapa «Desarrollo»</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const devIx = indicesEtapasDesarrollo();
+  if (devIx.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <p style="max-width:480px;margin:0 auto 16px">No hay ninguna etapa cuyo nombre incluya <strong>Desarrollo</strong>. Este panel solo muestra esa etapa. Tenés <strong>${tasks.length}</strong> etapa(s) en el proyecto (no editables aquí). Volvé a <strong>Datos del proyecto</strong> y entrá de nuevo a Etapas para recargar FASE B.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost" onclick="addEtapaDesarrolloVacia()">＋ Agregar etapa «Desarrollo»</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const otras = tasks.length - devIx.length;
+  const aviso =
+    otras > 0
+      ? `<div style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">Hay <strong>${otras}</strong> etapa(s) más (Gestión, Relevamiento, …) que <strong>no se editan aquí</strong>: se completan al <strong>importar</strong> el Excel de Desarrollo y al ir a <strong>Revisión</strong>.</div>`
+      : '';
+
+  list.innerHTML =
+    aviso +
+    devIx
+      .map((i) => {
+        const task = tasks[i];
+        const totalHours = task.subtareas.length
+          ? sumHoursInTree(task.subtareas)
+          : parseFloat(task.horas) || 0;
+        const subCount = countSubNodes(task.subtareas);
+        const subtasksHtml = renderSubTree(i, task.subtareas || [], []);
+        const idxLabel = devIx.indexOf(i) + 1;
+
+        return `
+    <div class="task-card" id="task-card-${i}">
+      <div class="task-header" onclick="toggleCard(${i})">
+        <div class="task-index">${idxLabel}</div>
+        <div class="task-name-preview">${task.nombre || '<span style="color:var(--muted)">Sin nombre</span>'} <span style="font-size:10px;color:var(--green);font-weight:600">(solo actividades)</span></div>
+        <div class="task-meta">
+          <span>${subCount} ítem${subCount !== 1 ? 's' : ''}</span>
+          <span>${totalHours}h</span>
+        </div>
+        <button class="btn btn-danger" onclick="event.stopPropagation();removeTask(${i})" style="margin-right:4px" title="Quita esta etapa Desarrollo del proyecto">✕</button>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="task-body">
+        <div class="form-grid">
+          <div class="field">
+            <label>Nombre de la etapa *</label>
+            <input type="text" value="${esc(task.nombre)}" placeholder="Desarrollo"
+              data-field="nombre" readonly title="Debe incluir «Desarrollo» para que el panel y el cálculo v4 la reconozcan"
+              oninput="updateTask(${i},'nombre',this.value)">
+          </div>
+          <div class="field">
+            <label>Responsable</label>
+            <input type="text" value="${esc(task.responsable)}" placeholder="Ej: DEV, PM"
+              oninput="updateTask(${i},'responsable',this.value)">
+          </div>
+          ${task.subtareas.length === 0 ? `
+          <div class="field">
+            <label>Horas estimadas</label>
+            <input type="number" min="0" step="0.5" value="${task.horas || ''}" placeholder="0"
+              oninput="updateTask(${i},'horas',this.value)">
+          </div>
+          <div class="field">
+            <label>Estado</label>
+            <select onchange="updateTask(${i},'estado',this.value)">
+              ${['Pendiente','En curso','DONE','Bloqueado'].map(s => `<option${task.estado===s?' selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          ` : ''}
+          <div class="field" style="grid-column:1/-1">
+            <label>Observaciones</label>
+            <textarea placeholder="Notas adicionales..." oninput="updateTask(${i},'observaciones',this.value)">${esc(task.observaciones)}</textarea>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:8px">Actividades (export: «-», «--», … según nivel)</div>
+        <div class="subtask-list">${subtasksHtml}</div>
+        <button class="btn btn-ghost" onclick="addSubtask(${i})" style="margin-top:4px">＋ Agregar actividad</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function updateTask(i, field, val) {
+  tasks[i][field] = field === 'horas' ? parseFloat(val) || 0 : val;
+}
+
+function walkToSubNode(task, path) {
+  let node = task.subtareas[path[0]];
+  for (let j = 1; j < path.length; j++) {
+    if (!node.subtareas) node.subtareas = [];
+    node = node.subtareas[path[j]];
+  }
+  return node;
+}
+
+function updateNested(ti, path, field, val) {
+  const node = walkToSubNode(tasks[ti], path);
+  node[field] = field === 'horas' ? parseFloat(val) || 0 : val;
+}
+
+// --- Preview ---
+
+function collectPayload() {
+  return {
+    nombre: document.getElementById('proj-nombre').value.trim(),
+    cliente: document.getElementById('proj-cliente').value.trim(),
+    fecha_inicio: document.getElementById('proj-fecha').value,
+    estimado_por: document.getElementById('proj-estimador').value.trim(),
+    tareas: tasks.map(t => ({
+      nombre: t.nombre,
+      horas: parseFloat(t.horas) || 0,
+      responsable: t.responsable || '',
+      estado: t.estado || 'Pendiente',
+      observaciones: t.observaciones || '',
+      subtareas: (t.subtareas || []).map(s => serializeSub(s)),
+    })),
+  };
+}
+
+function escPreviewCell(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderExcelPreviewTable(rows) {
+  if (!rows || !rows.length) return '<em style="color:var(--muted)">Sin filas</em>';
+  let h = '<table class="excel-preview-table"><thead><tr>';
+  rows[0].forEach(c => { h += `<th>${escPreviewCell(c)}</th>`; });
+  h += '</tr></thead><tbody>';
+  rows.slice(1).forEach(r => {
+    h += '<tr>' + r.map(c => `<td title="${escPreviewCell(c)}">${escPreviewCell(c)}</td>`).join('') + '</tr>';
+  });
+  h += '</tbody></table>';
+  if (rows.length > 1) h += '<p style="margin-top:10px;font-size:11px;color:var(--muted);font-family:var(--mono)">TASKLIST = cliente · 1ª fila TASK = proyecto · luego -sección · --actividad · ---…</p>';
+  return h;
+}
+
+async function buildPreview() {
+  const nombre = document.getElementById('proj-nombre').value;
+  const cliente = document.getElementById('proj-cliente').value;
+
+  let totalHoras = 0;
+  let totalSubs = 0;
+  tasks.forEach(t => {
+    if (t.subtareas && t.subtareas.length) {
+      totalHoras += sumHoursInTree(t.subtareas);
+      totalSubs += countSubNodes(t.subtareas);
+    } else {
+      totalHoras += parseFloat(t.horas) || 0;
+    }
+  });
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Etapas</div><div class="stat-value accent">${tasks.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Actividades</div><div class="stat-value">${totalSubs}</div></div>
+    <div class="stat-card"><div class="stat-label">Horas totales</div><div class="stat-value green">${totalHoras}</div></div>
+    <div class="stat-card"><div class="stat-label">Días est.</div><div class="stat-value">${Math.ceil(totalHoras/8)}</div></div>
+  `;
+
+  const tree = document.getElementById('preview-tree');
+  tree.innerHTML = `
+    <div class="tree-project">📁 ${nombre} <span style="font-size:11px;color:var(--muted);font-weight:400">— ${cliente}</span></div>
+    ${tasks.map(t => {
+      const h = t.subtareas.length ? sumHoursInTree(t.subtareas) : (parseFloat(t.horas)||0);
+      function treeSubs(subs, depth) {
+        if (!subs || !subs.length) return '';
+        return subs.map(s => {
+          const dash = '-'.repeat(depth);
+          const subHtml = treeSubs(s.subtareas, depth + 1);
+          return `
+          <div class="tree-subtask">
+            <div class="tree-subtask-line">
+              <span class="dot dot-sub"></span>
+              <span style="font-family:var(--mono);color:var(--muted)">${dash}</span>
+              <span>${s.nombre || '<em>Sin nombre</em>'}</span>
+              <span class="badge-hours">${s.horas||0}h</span>
+            </div>
+          </div>${subHtml}`;
+        }).join('');
+      }
+      return `
+      <div class="tree-task">
+        <div class="tree-task-line">
+          <span class="dot dot-task"></span>
+          <span>${t.nombre || '<em style="color:var(--muted)">Sin nombre</em>'}</span>
+          <span class="badge-hours">${h}h</span>
+        </div>
+        ${treeSubs(t.subtareas, 1)}
+      </div>`;
+    }).join('')}
+  `;
+
+  const pre = document.getElementById('excel-preview');
+  pre.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:12px">Cargando vista previa…</div>';
+  try {
+    const res = await fetch('/preview-excel-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectPayload()),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || res.statusText);
+    }
+    const data = await res.json();
+    pre.innerHTML = renderExcelPreviewTable(data.rows);
+  } catch (e) {
+    pre.innerHTML = `<div style="color:var(--red);font-size:13px">No se pudo cargar la vista previa. ¿Está corriendo el servidor? (${escPreviewCell(e.message)})</div>`;
+  }
+  renderRpaCalcDashboard();
+}
+
+async function exportExcel() {
+  const nombre = document.getElementById('proj-nombre').value.trim();
+  if (!nombre) { showToast('Falta el nombre del proyecto', 'var(--red)'); return; }
+
+  try {
+    const res = await fetch('/generate-xlsx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectPayload()),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || res.statusText);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${nombre.replace(/\s+/g,'_')}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✓ Excel descargado correctamente');
+  } catch (e) {
+    showToast('Error al generar Excel: ' + e.message, 'var(--red)');
+  }
+}
+</script>
+</body>
+</html>

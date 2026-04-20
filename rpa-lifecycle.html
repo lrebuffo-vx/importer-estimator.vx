@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VORTEX - RPA Ciclo de Vida</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh; color: #333;
+        }
+        .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
+            border-radius: 20px; padding: 35px 40px; margin-bottom: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .header::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
+            animation: shimmer 8s ease-in-out infinite;
+        }
+        @keyframes shimmer { 0%,100% { transform: translateX(-50%); } 50% { transform: translateX(50%); } }
+        .header h1 { font-size: 2.2em; color: white; margin-bottom: 8px; text-align: center; font-weight: 700; position: relative; z-index: 2; }
+        .header h1 img { vertical-align: middle; margin-right: 10px; }
+        .header-subtitle { color: rgba(255,255,255,0.75); font-size: 1.1em; margin-bottom: 16px; position: relative; z-index: 2; }
+
+        
+        
+        
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            border-radius: 15px; padding: 25px; text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-value { font-size: 2.5em; font-weight: bold; color: #3498db; margin-bottom: 5px; }
+        .stat-label { color: #7f8c8d; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+
+        .legend-section {
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            border-radius: 15px; padding: 25px; margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .legend-section h3 { color: #2c3e50; margin-bottom: 15px; font-size: 1.2em; text-align: center; }
+        .legend-grid {
+            display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex; align-items: center; background: #f8f9fa;
+            padding: 8px 14px; border-radius: 8px;
+        }
+        .legend-color { width: 18px; height: 18px; border-radius: 4px; margin-right: 8px; }
+        .legend-item span { font-size: 0.9em; color: #2c3e50; }
+
+        .phase-section { margin-bottom: 20px; }
+
+        .phase-header {
+            display: flex; align-items: center; padding: 20px 25px;
+            border-radius: 15px; color: white; cursor: pointer;
+            transition: all 0.3s ease; user-select: none;
+        }
+        .phase-header:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); }
+        .phase-preventa { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .phase-proyecto { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .phase-soporte { background: linear-gradient(135deg, #27ae60, #229954); }
+
+        .phase-icon { font-size: 1.8em; margin-right: 15px; }
+        .phase-title { flex: 1; }
+        .phase-title h2 { font-size: 1.6em; margin-bottom: 3px; }
+        .phase-title p { opacity: 0.9; font-size: 1em; }
+
+        .collapse-btn {
+            background: rgba(255, 255, 255, 0.2); border: none; color: white;
+            padding: 8px 18px; border-radius: 20px; cursor: pointer;
+            transition: all 0.3s ease; font-size: 0.9em; font-weight: 500;
+        }
+        .collapse-btn:hover { background: rgba(255, 255, 255, 0.35); }
+
+        .flow-btn {
+            background: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer;
+            transition: all 0.3s ease; font-size: 0.9em; font-weight: 500;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+            margin-right: 8px;
+        }
+        .flow-btn:hover { background: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
+
+        .collapsible-content {
+            max-height: 5000px; overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .collapsed { max-height: 0; }
+
+        .stage-container { padding: 15px 0 0 0; }
+
+        .stage {
+            background: rgba(255, 255, 255, 0.95); border-radius: 12px;
+            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden; border-left: 5px solid;
+        }
+        .stage-preventa { border-left-color: #e74c3c; }
+        .stage-proyecto { border-left-color: #3498db; }
+        .stage-soporte { border-left-color: #27ae60; }
+
+        .stage-header {
+            background: #f8f9fa; padding: 14px 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .stage-title { font-size: 1.2em; color: #2c3e50; font-weight: 600; }
+
+        .activities { padding: 15px 20px; }
+
+        .activity {
+            display: grid;
+            grid-template-columns: 50px 1fr 200px 150px;
+            gap: 15px; padding: 12px 0;
+            border-bottom: 1px solid #f1f2f6;
+            align-items: start;
+        }
+        .activity:last-child { border-bottom: none; }
+
+        .activity-id {
+            background: #3498db; color: white;
+            padding: 4px 8px; border-radius: 16px;
+            text-align: center; font-weight: 600; font-size: 0.85em;
+        }
+        .activity-description { font-size: 0.95em; line-height: 1.4; color: #2c3e50; }
+
+        .deliverables {
+            background: #f0fdf4; padding: 8px 10px; border-radius: 6px;
+            font-size: 0.85em; color: #555; border-left: 3px solid #27ae60;
+        }
+        .deliverables a {
+            color: #16a085; text-decoration: none; font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .deliverables a:hover { text-decoration: underline; color: #138a72; }
+
+        .roles { display: flex; flex-wrap: wrap; gap: 4px; }
+        .role-tag {
+            color: white; padding: 3px 8px; border-radius: 10px;
+            font-size: 0.78em; font-weight: 600;
+        }
+        .role-ba { background: #e67e22; }
+        .role-pm { background: #9b59b6; }
+        .role-tl { background: #34495e; }
+        .role-dev { background: #16a085; }
+        .role-client { background: #e74c3c; }
+        .role-ts { background: #27ae60; }
+
+        @media (max-width: 768px) {
+            .activity { grid-template-columns: 1fr; gap: 8px; }
+            .phase-header { flex-direction: column; text-align: center; }
+            .phase-icon { margin-right: 0; margin-bottom: 8px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            
+        }
+    .navigation-tabs {
+            display: flex; justify-content: center; gap: 8px;
+            margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .nav-tab {
+            background: rgba(255,255,255,0.1); color: white;
+            padding: 10px 20px; border-radius: 25px; text-decoration: none;
+            font-weight: 500; font-size: 0.9em; transition: all 0.3s ease;
+        }
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(255,255,255,0.3); transform: translateY(-2px);
+        }
+        </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1><img src="https://vortex-it.com/wp-content/uploads/2022/04/LOGO-VORTEX-PNG@4x-230x35.png" class="header-logo" height="22" width="145" alt="Vortex"> RPA — Ciclo de Vida</h1>
+            <div class="header-subtitle">Buenas prácticas y herramientas aplicadas para la organización de RPA</div>
+        </div>
+
+        <div class="navigation-tabs">
+            <a href="index.html" class="nav-tab">🏠 Inicio</a>
+            <a href="rpa-overview.html" class="nav-tab">🏢 Overview</a>
+            <a href="rpa-planificacion.html" class="nav-tab">📊 Planificación</a>
+            <a href="rpa-ejecucion.html" class="nav-tab">⏱️ Ejecución</a>
+            <a href="rpa-gantt.html" class="nav-tab">📊 Scrumban</a>
+            <a href="rpa-status.html" class="nav-tab">📋 Status</a>
+            <a href="rpa-informe-mensual.html" class="nav-tab">📈 Informe</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Fases Principales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Etapas del Proceso</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24</div>
+                <div class="stat-label">Actividades Totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Roles Involucrados</div>
+            </div>
+        </div>
+
+        <div class="legend-section">
+            <h3>Roles</h3>
+            <div class="legend-grid">
+                <div class="legend-item"><div class="legend-color role-pm"></div><span><strong>PM</strong> Project Manager</span></div>
+                <div class="legend-item"><div class="legend-color role-ba"></div><span><strong>BA</strong> Business Analyst</span></div>
+                <div class="legend-item"><div class="legend-color role-tl"></div><span><strong>TL</strong> Tech Lead</span></div>
+                <div class="legend-item"><div class="legend-color role-dev"></div><span><strong>DEV</strong> Developer</span></div>
+                <div class="legend-item"><div class="legend-color role-client"></div><span><strong>Client</strong> Cliente</span></div>
+                <div class="legend-item"><div class="legend-color role-ts"></div><span><strong>TS</strong> Team Support</span></div>
+            </div>
+        </div>
+
+        <!-- FASE A: PREVENTA -->
+        <div class="phase-section">
+            <div class="phase-header phase-preventa" onclick="toggleCollapse('preventa')">
+                <div class="phase-icon">🎯</div>
+                <div class="phase-title">
+                    <h2>FASE A: PREVENTA</h2>
+                    <p>Análisis inicial y propuesta comercial</p>
+                </div>
+                <a href="rpa-flujo-preventa.html" class="flow-btn" onclick="event.stopPropagation()">📋 Ver flujo</a>
+                <button class="collapse-btn" id="btn-preventa">Expandir</button>
+            </div>
+            <div class="collapsible-content collapsed" id="content-preventa">
+                <div class="stage-container">
+                    <div class="stage stage-preventa">
+                        <div class="stage-header"><div class="stage-title">📊 Preventa</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">10</div>
+                                <div class="activity-description">Entender las necesidades del cliente</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">12</div>
+                                <div class="activity-description">Evaluar la complejidad de la iniciativa</div>
+                                <div class="deliverables"><a href="rpa-eval-complejidad.html">Nivel de complejidad</a></div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">13</div>
+                                <div class="activity-description">Desarrollar POC's</div>
+                                <div class="deliverables">POC</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">15</div>
+                                <div class="activity-description">Desarrollar un flujo general del proceso</div>
+                                <div class="deliverables">Flujo general del proceso</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">16</div>
+                                <div class="activity-description">Desarrollar un plan de actividades para el DEV</div>
+                                <div class="deliverables">Planilla de estimación</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">18</div>
+                                <div class="activity-description">Desarrollar una estimación para la ejecución del proyecto</div>
+                                <div class="deliverables"><a href="rpa-calc-iniciativa.html">Presupuesto</a></div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-pm">PM</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">19</div>
+                                <div class="activity-description">Desarrollar una propuesta comercial</div>
+                                <div class="deliverables">Propuesta comercial</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-pm">PM</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE B: PROYECTO -->
+        <div class="phase-section">
+            <div class="phase-header phase-proyecto" onclick="toggleCollapse('proyecto')">
+                <div class="phase-icon">🚀</div>
+                <div class="phase-title">
+                    <h2>FASE B: PROYECTO</h2>
+                    <p>Desarrollo completo de la automatización</p>
+                </div>
+                <a href="rpa-flujo-proyecto.html" class="flow-btn" onclick="event.stopPropagation()">📋 Ver flujo</a>
+                <button class="collapse-btn" id="btn-proyecto">Expandir</button>
+            </div>
+            <div class="collapsible-content collapsed" id="content-proyecto">
+                <div class="stage-container">
+                    <div class="stage stage-proyecto">
+                        <div class="stage-header"><div class="stage-title">⚙️ Gestión</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">20</div>
+                                <div class="activity-description">Gestionar el proyecto</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-pm">PM</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">22</div>
+                                <div class="activity-description">Poner en ejecución el proyecto</div>
+                                <div class="deliverables">Inicio de ejecución del proyecto / Acta Kick-off</div>
+                                <div class="roles"><span class="role-tag role-pm">PM</span><span class="role-tag role-ba">BA</span><span class="role-tag role-client">Client</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">25</div>
+                                <div class="activity-description">Realizar la retrospectiva del proyecto</div>
+                                <div class="deliverables">Fin de ejecución del proyecto / Acta de Cierre</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-ba">BA</span><span class="role-tag role-tl">TL</span><span class="role-tag role-pm">PM</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stage stage-proyecto">
+                        <div class="stage-header"><div class="stage-title">🔍 Relevamiento</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">30</div>
+                                <div class="activity-description">Validar los prerrequisitos</div>
+                                <div class="deliverables">Prerrequisitos validados</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">32</div>
+                                <div class="activity-description">Relevar y analizar el proceso a automatizar</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">34</div>
+                                <div class="activity-description">Actualización del flujo general del proceso</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">35</div>
+                                <div class="activity-description">Construir el documento del diseño del proceso (PDD)</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">36</div>
+                                <div class="activity-description">Aprobar el PDD</div>
+                                <div class="deliverables">PDD aprobado</div>
+                                <div class="roles"><span class="role-tag role-client">Client</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">37</div>
+                                <div class="activity-description">Actualizar la planificación del proyecto</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">39</div>
+                                <div class="activity-description">Asignar el proyecto al desarrollador</div>
+                                <div class="deliverables">Dev asignado</div>
+                                <div class="roles"><span class="role-tag role-pm">PM</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stage stage-proyecto">
+                        <div class="stage-header"><div class="stage-title">🏗️ Diseño y Arquitectura</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">40</div>
+                                <div class="activity-description">Diseñar la automatización</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">45</div>
+                                <div class="activity-description">Construir el documento de diseño de la solución (SDD)</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">46</div>
+                                <div class="activity-description">Aprobar el SDD</div>
+                                <div class="deliverables">SDD aprobado</div>
+                                <div class="roles"><span class="role-tag role-pm">PM</span><span class="role-tag role-tl">TL</span><span class="role-tag role-ba">BA</span><span class="role-tag role-dev">DEV</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stage stage-proyecto">
+                        <div class="stage-header"><div class="stage-title">💻 Desarrollo</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">50</div>
+                                <div class="activity-description">Desarrollar la automatización</div>
+                                <div class="deliverables">Inicio del desarrollo / Fin del desarrollo / RPA DB Release</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">53</div>
+                                <div class="activity-description">Realizar las pruebas unitarias</div>
+                                <div class="deliverables">Pruebas unitarias OK</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">55</div>
+                                <div class="activity-description">Realizar las pruebas integrales</div>
+                                <div class="deliverables">Pruebas integrales/ UAT OK</div>
+                                <div class="roles"><span class="role-tag role-ba">BA</span><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span><span class="role-tag role-client">Client</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">57</div>
+                                <div class="activity-description">Construir el manual técnico</div>
+                                <div class="deliverables">Manual técnico presentado</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">58</div>
+                                <div class="activity-description">Construir el manual del usuario</div>
+                                <div class="deliverables">Manual del usuario presentado</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stage stage-proyecto">
+                        <div class="stage-header"><div class="stage-title">🌐 Puesta en Producción</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">60</div>
+                                <div class="activity-description">Migrar / poner en producción</div>
+                                <div class="deliverables">Fin del desarrollo / puesta en producción / RPA DB Release Productivo</div>
+                                <div class="roles"><span class="role-tag role-client">Client</span><span class="role-tag role-dev">DEV</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stage stage-proyecto">
+                        <div class="stage-header"><div class="stage-title">🛡️ Período de Garantía</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">70</div>
+                                <div class="activity-description">Monitorear y ajustar la automatización dentro del alcance</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-dev">DEV</span><span class="role-tag role-tl">TL</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE C: SOPORTE -->
+        <div class="phase-section">
+            <div class="phase-header phase-soporte" onclick="toggleCollapse('soporte')">
+                <div class="phase-icon">🔧</div>
+                <div class="phase-title">
+                    <h2>FASE C: SOPORTE</h2>
+                    <p>Mantenimiento y mejora continua</p>
+                </div>
+                <button class="collapse-btn" id="btn-soporte">Expandir</button>
+            </div>
+            <div class="collapsible-content collapsed" id="content-soporte">
+                <div class="stage-container">
+                    <div class="stage stage-soporte">
+                        <div class="stage-header"><div class="stage-title">🔧 Soporte</div></div>
+                        <div class="activities">
+                            <div class="activity">
+                                <div class="activity-id">80</div>
+                                <div class="activity-description">Monitorear la automatización</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ts">TS</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">82</div>
+                                <div class="activity-description">Gestionar cambios, reingeniería y actualizaciones</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ts">TS</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">84</div>
+                                <div class="activity-description">Realizar consultorías, asesoramiento y mejora continua</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ts">TS</span></div>
+                            </div>
+                            <div class="activity">
+                                <div class="activity-id">86</div>
+                                <div class="activity-description">Renovar licencias productivas</div>
+                                <div class="deliverables">-</div>
+                                <div class="roles"><span class="role-tag role-ts">TS</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleCollapse(phaseId) {
+            const content = document.getElementById('content-' + phaseId);
+            const btn = document.getElementById('btn-' + phaseId);
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                btn.textContent = 'Contraer';
+            } else {
+                content.classList.add('collapsed');
+                btn.textContent = 'Expandir';
+            }
+        }
+    </script>
+
+    <div style="text-align:center; padding:20px; margin-top:30px;">
+        <div style="color:rgba(255,255,255,0.4); font-size:0.78em;">
+            VORTEX &mdash; CX &amp; Automation &mdash; Portal RPA &mdash; 2026
+        </div>
+    </div>
+</body>
+</html>
