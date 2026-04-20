@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import re
+from pathlib import Path
 from datetime import date, datetime, timedelta
 from typing import Any, List, Optional
 
@@ -10,6 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from openpyxl import Workbook, load_workbook
 from pydantic import BaseModel
+
+# Mismo directorio que main.py (en PythonAnywhere el cwd de uvicorn no es el del proyecto).
+_BASE_DIR = Path(__file__).resolve().parent
+_INDEX_PATH = _BASE_DIR / "index.html"
 
 app = FastAPI(title="Teamwork Projects Import (Excel)")
 
@@ -585,5 +590,9 @@ async def generate_xlsx(project: Project):
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
+    if not _INDEX_PATH.is_file():
+        raise HTTPException(
+            status_code=500,
+            detail=f"No se encuentra index.html en {_BASE_DIR}",
+        )
+    return _INDEX_PATH.read_text(encoding="utf-8")
